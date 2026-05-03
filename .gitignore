@@ -49,5 +49,7 @@ pm2.json
 
 logs/*
 .vercel
+.cloudflare-pages
+.open-next
 
 .cursor/*
