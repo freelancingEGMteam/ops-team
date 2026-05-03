@@ -14,7 +14,7 @@ const nextOnPagesCli = path.join(
   'index.js'
 )
 
-execSync(`node "${nextOnPagesCli}" --outdir ../../.cloudflare-pages`, {
+execSync(`node "${nextOnPagesCli}" --outdir=../../.cloudflare-pages`, {
   cwd: frontendDir,
   stdio: 'inherit',
   shell: true
