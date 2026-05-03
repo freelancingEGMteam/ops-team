@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workteam Task List Preview</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --panel-soft: #f8fafc;
+        --panel-strong: #eef2ff;
+        --border: #e2e8f0;
+        --text: #0f172a;
+        --muted: #64748b;
+        --accent: #4f46e5;
+        --success: #10b981;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, Arial, sans-serif;
+        background: linear-gradient(135deg, #eef2ff 0%, #ffffff 35%, #f8fafc 100%);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #020617, #111827 58%, #312e81);
+        color: white;
+        border-radius: 28px;
+        padding: 28px;
+        box-shadow: 0 28px 90px -40px rgba(15, 23, 42, 0.75);
+      }
+
+      .hero p, .hero h1 { margin: 0; }
+      .pill {
+        display: inline-block;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.08);
+        color: #c7d2fe;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .hero h1 {
+        margin-top: 14px;
+        font-size: 40px;
+        line-height: 1.05;
+      }
+
+      .hero .sub {
+        margin-top: 14px;
+        max-width: 760px;
+        color: #cbd5e1;
+        line-height: 1.6;
+      }
+
+      .hero .url {
+        margin-top: 18px;
+        color: #e2e8f0;
+        font-size: 14px;
+      }
+
+      code {
+        background: rgba(0,0,0,0.2);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 6px;
+      }
+
+      .workspace {
+        margin-top: 24px;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(10px);
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 16px 50px -32px rgba(15,23,42,0.25);
+      }
+
+      .workspace-top {
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      }
+
+      .workspace-top h2,
+      .workspace-top p,
+      .section-title,
+      .section-subtitle {
+        margin: 0;
+      }
+
+      .workspace-head {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .workspace-top h2 {
+        font-size: 30px;
+        line-height: 1.1;
+      }
+
+      .workspace-top p {
+        margin-top: 10px;
+        color: var(--muted);
+        max-width: 760px;
+        line-height: 1.6;
+      }
+
+      .meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .meta span,
+      .chip,
+      .status-chip,
+      .tag,
+      .priority {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+      }
+
+      .meta span {
+        padding: 9px 12px;
+        background: var(--panel-strong);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .filters,
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        background: white;
+        color: #334155;
+        font-size: 13px;
+      }
+
+      .chip.active {
+        background: #eef2ff;
+        color: var(--accent);
+        border-color: #c7d2fe;
+      }
+
+      .actions .chip {
+        background: #0f172a;
+        color: white;
+        border-color: #0f172a;
+      }
+
+      .content {
+        padding: 20px;
+        background: #f8fafc;
+      }
+
+      .group {
+        margin-top: 18px;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: white;
+        overflow: hidden;
+      }
+
+      .group:first-child { margin-top: 0; }
+
+      .group-head {
+        display: grid;
+        grid-template-columns: 1.7fr repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        align-items: center;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      }
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        flex: 0 0 auto;
+      }
+
+      .group-title strong {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .count {
+        background: #f1f5f9;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .columns {
+        display: contents;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1.7fr repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        align-items: center;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+      }
+
+      .row:last-of-type { border-bottom: 0; }
+      .row:hover { background: #f8fafc; }
+
+      .task-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .checkbox {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        border: 1.5px solid #cbd5e1;
+        background: white;
+        flex: 0 0 auto;
+      }
+
+      .checkbox.done {
+        background: #dcfce7;
+        border-color: #86efac;
+      }
+
+      .task-main {
+        min-width: 0;
+      }
+
+      .task-main strong {
+        display: block;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .task-main p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .assignee {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #c7d2fe, #818cf8);
+        color: #1e1b4b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .status-chip,
+      .priority,
+      .tag {
+        padding: 7px 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .status-chip.todo { background: #e2e8f0; color: #334155; }
+      .status-chip.progress { background: #dbeafe; color: #1d4ed8; }
+      .status-chip.review { background: #fef3c7; color: #b45309; }
+      .status-chip.done { background: #dcfce7; color: #047857; }
+
+      .priority.urgent { background: #fee2e2; color: #b91c1c; }
+      .priority.high { background: #ffedd5; color: #c2410c; }
+      .priority.normal { background: #e0f2fe; color: #0369a1; }
+
+      .tag {
+        background: #f1f5f9;
+        color: #475569;
+      }
+
+      .due {
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .due.overdue { color: var(--danger); }
+      .due.today { color: #b45309; }
+
+      .progress-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .progress-bar {
+        position: relative;
+        width: 100%;
+        max-width: 120px;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .progress-bar span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, #6366f1, #22c55e);
+      }
+
+      .add-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        background: #fcfcff;
+        color: var(--muted);
+        font-size: 14px;
+        border-top: 1px dashed var(--border);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .add-row:hover {
+        background: #f5f7ff;
+        color: #334155;
+      }
+
+      .add-row-form {
+        display: none;
+        grid-template-columns: 1.7fr repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        align-items: center;
+        padding: 14px 18px;
+        border-top: 1px dashed var(--border);
+        background: #fcfcff;
+      }
+
+      .add-row-form.visible {
+        display: grid;
+      }
+
+      .field {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        padding: 10px 12px;
+        font: inherit;
+        color: var(--text);
+      }
+
+      .field:focus {
+        outline: 2px solid #c7d2fe;
+        border-color: #a5b4fc;
+      }
+
+      .form-hint {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .plus {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+
+      .footer-note {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 20px;
+        border-radius: 24px;
+        border: 1px solid #a7f3d0;
+        background: #ecfdf5;
+        color: #065f46;
+      }
+
+      .footer-note code {
+        background: white;
+        color: #065f46;
+      }
+
+      @media (max-width: 1100px) {
+        .group-head,
+        .row,
+        .add-row-form {
+          min-width: 1100px;
+        }
+
+        .group {
+          overflow-x: auto;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .hero h1 { font-size: 32px; }
+        .workspace-head,
+        .footer-note {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="hero">
+        <div class="pill">Task List Preview</div>
+        <h1>Signed-in task list mockup for workteam.</h1>
+        <p class="sub">
+          This preview is focused on the row-by-row task list experience: grouped tasks,
+          inline metadata, visible progress, and create-task rows at the bottom of each section.
+        </p>
+        <p class="url">Open locally at <code>/preview-workteam.html</code></p>
+      </section>
+
+      <section class="workspace">
+        <div class="workspace-top">
+          <div class="workspace-head">
+            <div>
+              <h2>Website Redesign</h2>
+              <p>List view focused on task execution after sign-in, with grouped sections and rows ready for fast scanning.</p>
+            </div>
+            <div class="meta">
+              <span>workteam</span>
+              <span>list view</span>
+              <span>24 active tasks</span>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="filters">
+              <div class="chip active">Group: Status</div>
+              <div class="chip">Assignee: Everyone</div>
+              <div class="chip">Priority: All</div>
+              <div class="chip">Due: This Week</div>
+            </div>
+            <div class="actions">
+              <div class="chip">New Task</div>
+              <div class="chip">Export</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content">
+          <div class="group" data-group-name="To Do" data-default-priority="High" data-default-tag="Content" data-default-due="Today" data-default-assignee="Workteam" data-default-avatar="WT">
+            <div class="group-head">
+              <div class="group-title">
+                <span class="dot" style="background:#94a3b8"></span>
+                <strong>To Do</strong>
+                <span class="count">6</span>
+              </div>
+              <div class="columns">Assignee</div>
+              <div class="columns">Priority</div>
+              <div class="columns">Tag</div>
+              <div class="columns">Due</div>
+              <div class="columns">Progress</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox"></span>
+                <div class="task-main">
+                  <strong>Finalize hero copy for the marketing landing page</strong>
+                  <p>Content polish before stakeholder review</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">MY</span> Maya</div>
+              <div><span class="priority high">High</span></div>
+              <div><span class="tag">Content</span></div>
+              <div class="due today">Today</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 30%"></span></div>30%</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox"></span>
+                <div class="task-main">
+                  <strong>Review mobile spacing in the new board cards</strong>
+                  <p>Check tablet and smaller breakpoints</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">AV</span> Ava</div>
+              <div><span class="priority normal">Normal</span></div>
+              <div><span class="tag">UI</span></div>
+              <div class="due">Thu</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 12%"></span></div>12%</div>
+            </div>
+
+            <div class="add-row"><span class="plus">+</span> Add task to To Do</div>
+            <div class="add-row-form">
+              <input class="field js-task-title" type="text" placeholder="Type task title and press Enter" />
+              <div class="form-hint">Workteam</div>
+              <div class="form-hint">High</div>
+              <div class="form-hint">Content</div>
+              <div class="form-hint">Today</div>
+              <div class="form-hint">0%</div>
+            </div>
+          </div>
+
+          <div class="group" data-group-name="In Progress" data-default-priority="Normal" data-default-tag="Frontend" data-default-due="Today" data-default-assignee="Workteam" data-default-avatar="WT">
+            <div class="group-head">
+              <div class="group-title">
+                <span class="dot" style="background:#60a5fa"></span>
+                <strong>In Progress</strong>
+                <span class="count">9</span>
+              </div>
+              <div class="columns">Assignee</div>
+              <div class="columns">Priority</div>
+              <div class="columns">Tag</div>
+              <div class="columns">Due</div>
+              <div class="columns">Progress</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox"></span>
+                <div class="task-main">
+                  <strong>Implement row-by-row task list redesign</strong>
+                  <p>Signed-in list view mock aligned to the new shell</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">CH</span> Chris</div>
+              <div><span class="priority urgent">Urgent</span></div>
+              <div><span class="tag">Frontend</span></div>
+              <div class="due today">Today</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 68%"></span></div>68%</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox"></span>
+                <div class="task-main">
+                  <strong>Connect create-task row to grouped status sections</strong>
+                  <p>Ensure new tasks appear in the correct lane</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">NM</span> Noah</div>
+              <div><span class="priority high">High</span></div>
+              <div><span class="tag">Tasks</span></div>
+              <div class="due">Fri</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 54%"></span></div>54%</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox"></span>
+                <div class="task-main">
+                  <strong>Check inline metadata spacing for assignee and due date</strong>
+                  <p>Preserve compact density without making rows cramped</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">LE</span> Lena</div>
+              <div><span class="priority normal">Normal</span></div>
+              <div><span class="tag">UX</span></div>
+              <div class="due">Mon</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 42%"></span></div>42%</div>
+            </div>
+
+            <div class="add-row"><span class="plus">+</span> Add task to In Progress</div>
+            <div class="add-row-form">
+              <input class="field js-task-title" type="text" placeholder="Type task title and press Enter" />
+              <div class="form-hint">Workteam</div>
+              <div class="form-hint">Normal</div>
+              <div class="form-hint">Frontend</div>
+              <div class="form-hint">Today</div>
+              <div class="form-hint">0%</div>
+            </div>
+          </div>
+
+          <div class="group" data-group-name="Review" data-default-priority="High" data-default-tag="Review" data-default-due="Tomorrow" data-default-assignee="Workteam" data-default-avatar="WT">
+            <div class="group-head">
+              <div class="group-title">
+                <span class="dot" style="background:#fbbf24"></span>
+                <strong>Review</strong>
+                <span class="count">5</span>
+              </div>
+              <div class="columns">Assignee</div>
+              <div class="columns">Priority</div>
+              <div class="columns">Tag</div>
+              <div class="columns">Due</div>
+              <div class="columns">Progress</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox"></span>
+                <div class="task-main">
+                  <strong>Approve calendar visual cleanup</strong>
+                  <p>Sign off on event card sizing and day treatment</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">EM</span> Emma</div>
+              <div><span class="priority high">High</span></div>
+              <div><span class="tag">Calendar</span></div>
+              <div class="due overdue">Overdue</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 88%"></span></div>88%</div>
+            </div>
+
+            <div class="row">
+              <div class="task-cell">
+                <span class="checkbox done"></span>
+                <div class="task-main">
+                  <strong>Review project shell typography scale</strong>
+                  <p>Waiting on final product signoff</p>
+                </div>
+              </div>
+              <div class="assignee"><span class="avatar">OL</span> Omar</div>
+              <div><span class="priority normal">Normal</span></div>
+              <div><span class="tag">Shell</span></div>
+              <div class="due">Tomorrow</div>
+              <div class="progress-wrap"><div class="progress-bar"><span style="width: 100%"></span></div>100%</div>
+            </div>
+
+            <div class="add-row"><span class="plus">+</span> Add task to Review</div>
+            <div class="add-row-form">
+              <input class="field js-task-title" type="text" placeholder="Type task title and press Enter" />
+              <div class="form-hint">Workteam</div>
+              <div class="form-hint">High</div>
+              <div class="form-hint">Review</div>
+              <div class="form-hint">Tomorrow</div>
+              <div class="form-hint">0%</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="footer-note">
+        <div>This is the auth-free static preview for the signed-in list style you asked for.</div>
+        <code>/preview-workteam.html</code>
+      </section>
+    </div>
+    <script>
+      function buildTaskRow(group, title) {
+        const assignee = group.dataset.defaultAssignee || 'Workteam'
+        const avatar = group.dataset.defaultAvatar || 'WT'
+        const priority = group.dataset.defaultPriority || 'Normal'
+        const tag = group.dataset.defaultTag || 'Task'
+        const due = group.dataset.defaultDue || 'Today'
+        const priorityClass = priority.toLowerCase() === 'urgent'
+          ? 'urgent'
+          : priority.toLowerCase() === 'high'
+            ? 'high'
+            : 'normal'
+
+        const row = document.createElement('div')
+        row.className = 'row'
+        row.innerHTML = `
+          <div class="task-cell">
+            <span class="checkbox"></span>
+            <div class="task-main">
+              <strong>${title}</strong>
+              <p>New inline task added in the preview</p>
+            </div>
+          </div>
+          <div class="assignee"><span class="avatar">${avatar}</span> ${assignee}</div>
+          <div><span class="priority ${priorityClass}">${priority}</span></div>
+          <div><span class="tag">${tag}</span></div>
+          <div class="due ${due.toLowerCase() === 'today' ? 'today' : ''}">${due}</div>
+          <div class="progress-wrap"><div class="progress-bar"><span style="width: 0%"></span></div>0%</div>
+        `
+        return row
+      }
+
+      function incrementGroupCount(group) {
+        const count = group.querySelector('.count')
+        if (!count) return
+        const value = Number.parseInt(count.textContent || '0', 10)
+        count.textContent = String(value + 1)
+      }
+
+      document.querySelectorAll('.group').forEach(group => {
+        const addRow = group.querySelector('.add-row')
+        const form = group.querySelector('.add-row-form')
+        const input = group.querySelector('.js-task-title')
+
+        if (!addRow || !form || !input) return
+
+        addRow.addEventListener('click', () => {
+          form.classList.add('visible')
+          input.focus()
+        })
+
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Escape') {
+            input.value = ''
+            form.classList.remove('visible')
+            return
+          }
+
+          if (event.key !== 'Enter') return
+
+          const title = input.value.trim()
+          if (!title) return
+
+          const row = buildTaskRow(group, title)
+          group.insertBefore(row, addRow)
+          incrementGroupCount(group)
+          input.value = ''
+          form.classList.remove('visible')
+        })
+      })
+    </script>
+  </body>
+</html>

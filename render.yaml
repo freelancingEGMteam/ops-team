@@ -1,0 +1,30 @@
+services:
+- type: web
+  name: namviek-be
+  runtime: node
+  repo: https://github.com/hudy9x/namviek
+  plan: free
+  envVars:
+  - key: REDIS_HOST
+    sync: false
+  - key: NEXT_PUBLIC_FE_GATEWAY
+    sync: false
+  - key: MONGODB_URL
+    sync: false
+  - key: JWT_VERIFY_USER_LINK_TOKEN_EXPIRED
+    value: 1h
+  - key: JWT_TOKEN_EXPIRED
+    value: 30m
+  - key: JWT_SECRET_KEY
+    generateValue: true
+  - key: JWT_REFRESH_KEY
+    generateValue: true
+  - key: JWT_REFRESH_EXPIRED
+    value: 4h
+  region: singapore
+  buildCommand: yarn --frozen-lockfile install; yarn pushdb2; yarn generate2; yarn
+    build:be
+  startCommand: yarn prod:be
+  healthCheckPath: /check-health
+version: "1"
+

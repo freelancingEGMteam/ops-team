@@ -1,0 +1,115 @@
+.calendar-wrapper {
+  @apply relative flex flex-col justify-between overflow-hidden rounded-b-[24px] border-x border-b border-slate-200 divide-y divide-slate-200;
+  @apply dark:divide-gray-800 dark:border-gray-800;
+  min-height: 800px;
+}
+
+.week-view.calendar-wrapper {
+  min-height: calc(100vh - 240px);
+}
+
+.calendar-week {
+  @apply grid h-full grid-cols-7 divide-x divide-slate-200 dark:divide-gray-800;
+}
+
+.calendar-day {
+  @apply relative text-sm text-slate-400;
+  @apply overflow-y-auto h-[160px];
+}
+
+.calendar-day.in-month {
+  @apply bg-white dark:bg-[#0f1727];
+  @apply hover:bg-slate-50 dark:hover:bg-[#162033];
+}
+
+.calendar-day.not-in-month {
+  @apply bg-slate-50/70 dark:bg-[#0b1220];
+}
+
+.week-view .calendar-day {
+  height: calc(100vh - 183px);
+}
+
+.calendar-day .day-display {
+  @apply sticky left-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full text-center text-xs font-medium;
+  @apply bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300;
+}
+
+.week-view .day-display {
+  @apply hidden;
+}
+
+.calendar-create-task {
+  @apply absolute bottom-2 right-2 h-7 w-7 cursor-pointer rounded-full p-1 text-center opacity-0 transition-all;
+  @apply text-slate-500 hover:bg-slate-200 hover:text-slate-700;
+  @apply dark:text-slate-400 dark:hover:bg-slate-900;
+}
+
+.calendar-day:hover .calendar-create-task {
+  @apply opacity-100;
+}
+
+.calendar-day.today .day-display {
+  @apply bg-indigo-100 font-bold text-indigo-600;
+  @apply dark:bg-indigo-500 dark:text-gray-900;
+}
+
+.calendar-month-tasks {
+  @apply flex flex-col gap-2 px-2 pb-3 pt-5;
+}
+
+.calendar-task-item {
+  @apply relative overflow-hidden;
+  @apply rounded-[16px] border border-slate-200 bg-white px-2 py-1 text-sm text-slate-600 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.45)];
+  @apply transition-all dark:bg-slate-900 dark:border-gray-800 dark:text-slate-300;
+  @apply active:scale-95;
+}
+
+.calendar-task-item .no-name .selected-member-name {
+  @apply hidden;
+}
+
+.overdue-task {
+  @apply text-red-500;
+}
+
+.week-view .calendar-task-item {
+  @apply whitespace-pre-wrap;
+}
+
+/* Copy from /components/calendar/style.css - considers to remove one of them */
+.calendar-container {
+  @apply relative flex flex-col justify-between overflow-hidden rounded-t-[24px] border border-slate-200 bg-white shadow-[0_16px_40px_-32px_rgba(15,23,42,0.25)];
+  @apply dark:bg-slate-900 dark:border-gray-800 dark:shadow-gray-900;
+}
+
+.cal-header-day {
+  @apply px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-300;
+}
+
+.cal-week {
+  @apply grid h-full grid-cols-7 divide-x divide-slate-200 dark:divide-gray-800 dark:text-gray-400;
+}
+
+.cal-day {
+  @apply absolute top-1 left-2;
+}
+
+.cal-day-in-week {
+  @apply bg-white dark:bg-gray-900 relative;
+  @apply text-xs text-gray-600 dark:text-gray-400;
+}
+
+.cal-day-in-week.today .cal-day {
+  @apply text-indigo-500 font-bold;
+}
+
+.cal-day-in-week.is-sunsat {
+  @apply bg-gray-50 dark:bg-black/40;
+}
+
+.cal-day-in-week.not-in-month {
+  @apply bg-indigo-50/50 text-gray-400;
+  @apply dark:bg-gray-800;
+}
+/* Copy from components/calendar/style.css */

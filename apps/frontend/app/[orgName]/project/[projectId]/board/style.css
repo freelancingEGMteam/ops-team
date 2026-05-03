@@ -1,0 +1,59 @@
+.board-container {
+  @apply flex items-start gap-4 overflow-x-auto pb-2;
+}
+
+.board {
+  @apply w-[320px] shrink-0 relative overflow-hidden rounded-[24px] border border-slate-200 bg-white/75;
+  @apply shadow-[0_18px_40px_-32px_rgba(15,23,42,0.35)] backdrop-blur;
+  @apply dark:bg-slate-900/90 dark:border-gray-800;
+}
+
+.board-header {
+  @apply px-4 py-3 sticky top-0 left-0 w-full z-10;
+  @apply bg-white dark:bg-slate-900 backdrop-blur;
+  @apply border-b border-slate-200 dark:border-gray-800;
+}
+
+.board-header-section {
+  @apply flex border border-transparent items-center gap-2 transition-all rounded-2xl;
+}
+
+.board-list {
+  @apply overflow-x-hidden overflow-y-auto;
+  @apply pb-6 pt-3;
+  height: calc(100vh - 260px);
+}
+
+.board-item-container {
+  @apply px-3 pb-3;
+}
+
+.board-item {
+  @apply bg-white p-4 rounded-[20px] shadow-[0_16px_34px_-28px_rgba(15,23,42,0.4)] border border-slate-200;
+  @apply dark:bg-[#0f1727] dark:border-gray-800;
+  @apply transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:dark:border-indigo-400;
+}
+
+.board-item-action {
+  @apply flex items-center justify-between text-gray-500 mt-4;
+  & .task-assignee .selected-member-name {
+    @apply hidden;
+  }
+}
+
+.board-item-duedate {
+  @apply mt-3 text-slate-400 dark:text-slate-500;
+  @apply flex items-center gap-1;
+
+  & .form-input {
+    @apply text-[11px] cursor-pointer;
+  }
+}
+
+.board-col-header {
+  @apply flex items-center justify-between gap-2;
+}
+
+.board-header-loading {
+  @apply absolute inset-0 rounded-t-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm;
+}
