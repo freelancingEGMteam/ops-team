@@ -2,8 +2,5 @@ name = "ops-web"
 pages_build_output_dir = "dist"
 compatibility_date = "2025-05-01"
 
-[build]
-command = "npm install -g pnpm@9.15.4 && pnpm install && pnpm build"
-
 [vars]
 VITE_API_URL = "https://ops-api.your-subdomain.workers.dev"
