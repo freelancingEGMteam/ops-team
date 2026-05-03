@@ -1,0 +1,22 @@
+{
+  "name": "ops-cf",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": ["api", "web"],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "deploy": "turbo deploy",
+    "db:migrate:local": "wrangler d1 migrations apply ops-db --local --migrations-dir=migrations",
+    "db:migrate:prod": "wrangler d1 migrations apply ops-db --migrations-dir=migrations"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.3",
+    "wrangler": "^4.13.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.4"
+}

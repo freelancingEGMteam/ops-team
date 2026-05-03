@@ -1,0 +1,21 @@
+name = "ops-api"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+JWT_SECRET = "change-me-in-prod"
+CORS_ORIGIN = "http://localhost:5173"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ops-db"
+database_id = "placeholder-replace-after-wrangler-d1-create"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "placeholder-replace-after-wrangler-kv-create"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "ops-files"
