@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   CheckSquare,
-  Settings,
   LogOut,
   Plus,
 } from "lucide-react";

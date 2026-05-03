@@ -11,6 +11,7 @@ CORS_ORIGIN = "http://localhost:5173"
 binding = "DB"
 database_name = "ops-db"
 database_id = "placeholder-replace-after-wrangler-d1-create"
+migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
