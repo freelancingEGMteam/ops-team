@@ -77,6 +77,3 @@ Before deploying, please review our [deployment guide](https://docs.namviek.com/
 If you love this open source project, consider supporting its future development on Ko-fi!
 
 <a href="https://ko-fi.com/hudy9x" target="_blank"><img width="200" src="https://storage.ko-fi.com/cdn/brandasset/kofi_button_stroke.png" /></a>
-
-
-
