@@ -1,0 +1,5 @@
+{
+  "framework": "nextjs",
+  "installCommand": "cd ../.. && yarn install --pure-lockfile --no-progress --emoji false",
+  "buildCommand": "cd ../.. && yarn generate2 && cd apps/frontend && next build"
+}
