@@ -50,6 +50,7 @@ export const api = {
 
   users: {
     me: () => request<User>("/api/users/me"),
+    list: () => request<User[]>("/api/users"),
     byProject: (projectId: string) =>
       request<Pick<User, "id" | "name" | "email" | "avatar">[]>(
         `/api/users/project/${projectId}`

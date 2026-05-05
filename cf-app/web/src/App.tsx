@@ -6,6 +6,7 @@ import { LoginPage } from "@/pages/Login";
 import { RegisterPage } from "@/pages/Register";
 import { NewProjectPage } from "@/pages/Projects";
 import { ProjectDetailPage } from "@/pages/ProjectDetail";
+import { UsersPage } from "@/pages/Users";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/projects/new" element={<NewProjectPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/users" element={<UsersPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

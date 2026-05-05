@@ -9,6 +9,15 @@ const router = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 router.use("*", authMiddleware);
 
+router.get("/", async (c) => {
+  const db = createDb(c.env.DB);
+  const rows = await db
+    .select({ id: users.id, name: users.name, email: users.email, avatar: users.avatar, role: users.role })
+    .from(users)
+    .all();
+  return c.json(rows);
+});
+
 router.get("/me", async (c) => {
   const db = createDb(c.env.DB);
   const userId = c.get("user").sub;

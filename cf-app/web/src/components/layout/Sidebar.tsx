@@ -6,6 +6,7 @@ import {
   CheckSquare,
   LogOut,
   Plus,
+  Users,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/projects", icon: FolderKanban, label: "Projects" },
   { to: "/tasks", icon: CheckSquare, label: "My Tasks" },
+  { to: "/users", icon: Users, label: "Users" },
 ];
 
 export function Sidebar() {

@@ -5,13 +5,16 @@ import { LayoutGrid, List } from "lucide-react";
 import { api } from "@/lib/api";
 import { TaskTable } from "@/components/tasks/TaskTable";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { Button } from "@/components/ui/button";
+import { type TaskRow } from "@/types";
 
-type ViewMode = "table" | "board";
+type ViewMode = "table" | "pipeline";
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [view, setView] = React.useState<ViewMode>("table");
+  const [selectedRow, setSelectedRow] = React.useState<TaskRow | null>(null);
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", id],
@@ -40,42 +43,53 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="h-4 w-4 rounded-full" style={{ backgroundColor: project.color }} />
-          <h1 className="text-xl font-bold">{project.name}</h1>
+    <>
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="h-4 w-4 rounded-full" style={{ backgroundColor: project.color }} />
+            <h1 className="text-xl font-bold">{project.name}</h1>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border p-0.5">
+            <Button
+              variant={view === "table" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7"
+              onClick={() => setView("table")}
+            >
+              <List className="h-3.5 w-3.5" />
+              Table
+            </Button>
+            <Button
+              variant={view === "pipeline" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7"
+              onClick={() => setView("pipeline")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Pipeline
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border p-0.5">
-          <Button
-            variant={view === "table" ? "secondary" : "ghost"}
-            size="sm"
-            className="h-7"
-            onClick={() => setView("table")}
-          >
-            <List className="h-3.5 w-3.5" />
-            Table
-          </Button>
-          <Button
-            variant={view === "board" ? "secondary" : "ghost"}
-            size="sm"
-            className="h-7"
-            onClick={() => setView("board")}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Board
-          </Button>
-        </div>
+
+        {tasksLoading ? (
+          <div className="text-sm text-muted-foreground">Loading tasks…</div>
+        ) : view === "table" ? (
+          <TaskTable
+            projectId={id!}
+            rows={taskRows}
+            onRowClick={(row) => setSelectedRow(row)}
+          />
+        ) : (
+          <TaskBoard projectId={id!} stages={stages} rows={taskRows} />
+        )}
       </div>
 
-      {tasksLoading ? (
-        <div className="text-sm text-muted-foreground">Loading tasks…</div>
-      ) : view === "table" ? (
-        <TaskTable projectId={id!} rows={taskRows} />
-      ) : (
-        <TaskBoard projectId={id!} stages={stages} rows={taskRows} />
-      )}
-    </div>
+      <TaskDetailPanel
+        row={selectedRow}
+        onClose={() => setSelectedRow(null)}
+      />
+    </>
   );
 }

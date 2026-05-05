@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, Plus, Trash2 } from "lucide-react";
+import { ArrowUpDown, GripVertical, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 import {
@@ -27,15 +27,23 @@ import { Input } from "@/components/ui/input";
 interface TaskTableProps {
   projectId: string;
   rows: TaskRow[];
+  onRowClick?: (row: TaskRow) => void;
 }
 
 const colHelper = createColumnHelper<TaskRow>();
 
-export function TaskTable({ projectId, rows }: TaskTableProps) {
+export function TaskTable({ projectId, rows, onRowClick }: TaskTableProps) {
   const qc = useQueryClient();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [newTaskName, setNewTaskName] = React.useState("");
+  const [orderedRows, setOrderedRows] = React.useState<TaskRow[]>(rows);
+  const [dragIndex, setDragIndex] = React.useState<number | null>(null);
+  const [dropIndex, setDropIndex] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setOrderedRows(rows);
+  }, [rows]);
 
   const updateTask = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof api.tasks.update>[1] }) =>
@@ -56,11 +64,47 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
     },
   });
 
+  const handleDragStart = (index: number) => setDragIndex(index);
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDropIndex(index);
+  };
+  const handleDrop = () => {
+    if (dragIndex === null || dropIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDropIndex(null);
+      return;
+    }
+    const updated = [...orderedRows];
+    const [moved] = updated.splice(dragIndex, 1);
+    updated.splice(dropIndex, 0, moved);
+    setOrderedRows(updated);
+    setDragIndex(null);
+    setDropIndex(null);
+    api.tasks.reorder(
+      updated.map((r, i) => ({ taskId: r.task.id, stageId: r.task.stageId, orderIndex: i }))
+    );
+  };
+
   const columns = [
+    colHelper.display({
+      id: "drag",
+      size: 32,
+      cell: ({ row }) => (
+        <div
+          draggable
+          onDragStart={() => handleDragStart(row.index)}
+          className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-4 w-4" />
+        </div>
+      ),
+    }),
     colHelper.accessor((r) => r.task.name, {
       id: "name",
       header: "Task",
-      size: 320,
+      size: 300,
       cell: ({ getValue, row }) => (
         <InlineTextCell
           value={getValue()}
@@ -161,7 +205,7 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
     }),
     colHelper.accessor((r) => r.task.dueDate, {
       id: "dueDate",
-      header: "Due",
+      header: "Due Date",
       size: 100,
       cell: ({ getValue }) => (
         <span className="text-sm text-muted-foreground">{formatDate(getValue())}</span>
@@ -172,7 +216,10 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
       size: 48,
       cell: ({ row }) => (
         <button
-          onClick={() => deleteTask.mutate(row.original.task.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteTask.mutate(row.original.task.id);
+          }}
           className="rounded p-1 opacity-0 transition-opacity hover:text-destructive group-hover/row:opacity-100"
           title="Delete task"
         >
@@ -183,7 +230,7 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
   ];
 
   const table = useReactTable({
-    data: rows,
+    data: orderedRows,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
@@ -208,16 +255,16 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
         <table className="w-full text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="border-b bg-muted/40">
+              <tr key={hg.id} className="border-b bg-[#0f172a]">
                 {hg.headers.map((h) => (
                   <th
                     key={h.id}
                     style={{ width: h.getSize() }}
-                    className="px-3 py-2 text-left text-xs font-medium text-muted-foreground"
+                    className="px-3 py-2.5 text-left text-xs font-medium text-white/70 uppercase tracking-wider"
                   >
                     {h.isPlaceholder ? null : (
                       <button
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 hover:text-white transition-colors"
                         onClick={h.column.getToggleSortingHandler()}
                       >
                         {flexRender(h.column.columnDef.header, h.getContext())}
@@ -235,7 +282,14 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
             {table.getRowModel().rows.map((row) => (
               <tr
                 key={row.id}
-                className="group/row border-b last:border-0 hover:bg-muted/30 transition-colors"
+                draggable={false}
+                onDragOver={(e) => handleDragOver(e, row.index)}
+                onDrop={handleDrop}
+                onClick={() => onRowClick?.(row.original)}
+                className={cn(
+                  "group/row border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer",
+                  dropIndex === row.index && dragIndex !== null && "border-t-2 border-indigo-500"
+                )}
               >
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="px-3 py-2">
@@ -258,7 +312,6 @@ export function TaskTable({ projectId, rows }: TaskTableProps) {
         </table>
       </div>
 
-      {/* Inline new task row */}
       <form
         className="flex items-center gap-2"
         onSubmit={(e) => {
