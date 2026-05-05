@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, MessageSquare, Paperclip, Send } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn, formatDate, getInitials } from "@/lib/utils";
+import { getStageStyle } from "@/lib/stages";
 import {
   type TaskRow,
   type TaskStatus,
@@ -34,6 +35,18 @@ function toDateInputValue(timestamp: number | null): string {
 
 function fromDateInputValue(value: string): string | null {
   return value ? new Date(`${value}T12:00:00.000Z`).toISOString() : null;
+}
+
+function StageBadge({ name }: { name: string }) {
+  const style = getStageStyle(name);
+  return (
+    <span
+      className="inline-flex max-w-full items-center rounded px-2 py-0.5 text-xs font-medium"
+      style={{ backgroundColor: style.color, color: style.textColor }}
+    >
+      <span className="truncate">{name}</span>
+    </span>
+  );
 }
 
 export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) {
@@ -211,7 +224,10 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                     value={row.stage?.id ?? "__none"}
                     options={[
                       { value: "__none", label: "None" },
-                      ...stages.map((stage) => ({ value: stage.id, label: stage.name })),
+                      ...stages.map((stage) => ({
+                        value: stage.id,
+                        label: <StageBadge name={stage.name} />,
+                      })),
                     ]}
                     onCommit={(stageId) =>
                       updateTask.mutate({
@@ -225,15 +241,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                           ? null
                           : stages.find((stage) => stage.id === stageId) ?? row.stage;
                       if (!selected) return <span className="text-sm text-slate-400">None</span>;
-                      return (
-                        <span className="flex items-center gap-1.5 text-sm text-slate-700">
-                          <span
-                            className="h-2 w-2 rounded-full shrink-0"
-                            style={{ backgroundColor: selected.color ?? "#94a3b8" }}
-                          />
-                          {selected.name}
-                        </span>
-                      );
+                      return <StageBadge name={selected.name} />;
                     }}
                   />
                 </div>

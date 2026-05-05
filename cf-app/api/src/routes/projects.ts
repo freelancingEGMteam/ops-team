@@ -64,22 +64,22 @@ router.post("/", zValidator("json", createProjectSchema), async (c) => {
 
   // Default stages
   const defaultStages = [
-    "Idea Only",
-    "Script/Lyrics Generation",
-    "Audio/Album Generation",
-    "Image/Video Generation",
-    "Video Editing",
-    "SEO&Metadata",
-    "Final Revision",
-    "Modifications Needed",
+    { name: "Idea Only", color: "#b8cbb8" },
+    { name: "Script/Lyrics Generation", color: "#0048ff" },
+    { name: "Audio/Album Generation", color: "#5f6974" },
+    { name: "Image/Video Generation", color: "#8a0000" },
+    { name: "Video Editing", color: "#168db5" },
+    { name: "SEO&Metadata", color: "#7fb7ff" },
+    { name: "Final Revision", color: "#ff75a8" },
+    { name: "Modifications Needed", color: "#883100" },
   ];
   await db.insert(stages).values(
-    defaultStages.map((name, i) => ({
+    defaultStages.map((stage, i) => ({
       id: nanoid(),
-      name,
+      name: stage.name,
       projectId: id,
       orderIndex: i,
-      color: ["#94a3b8", "#60a5fa", "#f59e0b", "#a78bfa", "#818cf8", "#22c55e", "#34d399", "#f97316"][i],
+      color: stage.color,
     }))
   );
 

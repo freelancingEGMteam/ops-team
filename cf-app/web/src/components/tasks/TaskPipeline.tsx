@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn, formatDate, getInitials } from "@/lib/utils";
+import { getStageStyle } from "@/lib/stages";
 import { type Stage, type TaskRow, STATUS_CONFIG, PRIORITY_CONFIG } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -43,8 +44,10 @@ export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
-      {stages.map((stage) => (
-        <div
+      {stages.map((stage) => {
+        const stageStyle = getStageStyle(stage.name);
+        return (
+          <div
           key={stage.id}
           className={cn(
             "flex w-72 shrink-0 flex-col rounded-xl border bg-muted/30 transition-colors",
@@ -66,7 +69,7 @@ export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
             <div className="flex items-center gap-2">
               <span
                 className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: stage.color ?? "#94a3b8" }}
+                style={{ backgroundColor: stageStyle.color }}
               />
               <span className="text-sm font-medium">{stage.name}</span>
               <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
@@ -135,8 +138,9 @@ export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
               </form>
             ) : null}
           </div>
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

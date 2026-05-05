@@ -67,7 +67,7 @@ export function InlineTextCell({ value, onCommit, className, placeholder }: Inli
 
 interface InlineSelectProps<T extends string> {
   value: T;
-  options: { value: T; label: string; className?: string }[];
+  options: { value: T; label: React.ReactNode; className?: string }[];
   onCommit: (value: T) => void;
   renderValue?: (value: T) => React.ReactNode;
 }
@@ -89,7 +89,7 @@ export function InlineSelectCell<T extends string>({
 
     const rect = trigger.getBoundingClientRect();
     const viewportPadding = 12;
-    const estimatedHeight = Math.min(260, 38 + options.length * 34);
+    const estimatedHeight = Math.min(320, 42 + options.length * 36);
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const openAbove = spaceBelow < estimatedHeight && rect.top > spaceBelow;
     const top = openAbove
@@ -99,10 +99,16 @@ export function InlineSelectCell<T extends string>({
     setMenuStyle({
       position: "fixed",
       top,
-      left: Math.min(rect.left, window.innerWidth - 260 - viewportPadding),
+      left: Math.max(
+        viewportPadding,
+        Math.min(rect.left, window.innerWidth - 320 - viewportPadding)
+      ),
       minWidth: Math.max(rect.width, 160),
-      maxWidth: 260,
-      maxHeight: Math.min(260, openAbove ? rect.top - viewportPadding : spaceBelow),
+      maxWidth: 320,
+      maxHeight: Math.max(
+        120,
+        Math.min(320, openAbove ? rect.top - viewportPadding : spaceBelow)
+      ),
     });
   }, [options.length]);
 
@@ -148,7 +154,7 @@ export function InlineSelectCell<T extends string>({
         <div
           ref={menuRef}
           style={menuStyle}
-          className="z-[100] overflow-y-auto rounded-md border bg-popover p-1 shadow-xl"
+          className="z-[1000] overflow-y-auto rounded-md border bg-popover p-2 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           {options.map((opt) => (

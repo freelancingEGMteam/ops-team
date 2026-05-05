@@ -8,19 +8,10 @@ import { TaskPipeline } from "@/components/tasks/TaskPipeline";
 import { TaskCalendar } from "@/components/tasks/TaskCalendar";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { Button } from "@/components/ui/button";
+import { STANDARD_STAGE_NAMES } from "@/lib/stages";
 import { type TaskRow } from "@/types";
 
 type ViewMode = "table" | "pipeline" | "calendar";
-const STANDARD_STAGE_NAMES = [
-  "Idea Only",
-  "Script/Lyrics Generation",
-  "Audio/Album Generation",
-  "Image/Video Generation",
-  "Video Editing",
-  "SEO&Metadata",
-  "Final Revision",
-  "Modifications Needed",
-];
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
