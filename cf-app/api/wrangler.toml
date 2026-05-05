@@ -15,7 +15,7 @@ migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "placeholder-replace-after-wrangler-kv-create"
+id = "23330719c9714bc38202da39774a23a0"
 
 [[r2_buckets]]
 binding = "FILES"
