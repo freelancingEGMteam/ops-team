@@ -63,18 +63,18 @@ export function ProjectDetailPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 md:gap-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="h-4 w-4 rounded-full" style={{ backgroundColor: project.color }} />
-            <h1 className="text-xl font-bold">{project.name}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
+            <h1 className="truncate text-lg font-bold sm:text-xl">{project.name}</h1>
           </div>
-          <div className="flex items-center gap-1 rounded-lg border p-0.5">
+          <div className="flex w-full items-center gap-1 overflow-x-auto rounded-lg border p-0.5 sm:w-auto">
             <Button
               variant={view === "table" ? "secondary" : "ghost"}
               size="sm"
-              className="h-7"
+              className="h-8 shrink-0 sm:h-7"
               onClick={() => setView("table")}
             >
               <List className="h-3.5 w-3.5" />
@@ -83,7 +83,7 @@ export function ProjectDetailPage() {
             <Button
               variant={view === "pipeline" ? "secondary" : "ghost"}
               size="sm"
-              className="h-7"
+              className="h-8 shrink-0 sm:h-7"
               onClick={() => setView("pipeline")}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
@@ -92,7 +92,7 @@ export function ProjectDetailPage() {
             <Button
               variant={view === "calendar" ? "secondary" : "ghost"}
               size="sm"
-              className="h-7"
+              className="h-8 shrink-0 sm:h-7"
               onClick={() => setView("calendar")}
             >
               <CalendarDays className="h-3.5 w-3.5" />

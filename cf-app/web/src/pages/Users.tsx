@@ -18,19 +18,19 @@ export function UsersPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <UsersIcon className="h-5 w-5 text-muted-foreground" />
             <h1 className="text-xl font-bold">User Management</h1>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="max-w-2xl text-sm text-muted-foreground">
             All registered accounts in this organization. Use these users when assigning tasks.
           </p>
         </div>
-        <div className="rounded-xl border bg-card px-4 py-2 text-center">
+        <div className="w-full rounded-xl border bg-card px-4 py-2 text-center sm:w-auto">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
           <p className="text-2xl font-bold">{users.length}</p>
         </div>
@@ -46,7 +46,7 @@ export function UsersPage() {
         </div>
       ) : (
         <div className="overflow-auto rounded-lg border">
-          <table className="w-full text-sm">
+          <table className="min-w-[860px] text-sm">
             <thead>
               <tr className="border-b bg-[#0f172a]">
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">User</th>

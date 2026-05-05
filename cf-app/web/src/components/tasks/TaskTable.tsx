@@ -438,17 +438,17 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
         <Input
           placeholder="Search tasks..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="h-8 w-64"
+          className="h-9 w-full sm:h-8 sm:w-64"
         />
         <select
           value={groupBy}
           onChange={(event) => setGroupBy(event.target.value as GroupBy)}
-          className="h-8 rounded-md border bg-background px-3 text-sm"
+          className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:h-8 sm:w-auto"
         >
           {GROUP_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -460,7 +460,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
           type="button"
           size="sm"
           variant="outline"
-          className="h-8"
+          className="h-9 w-full sm:h-8 sm:w-auto"
           onClick={() => localStorage.setItem(`ops-view-${projectId}-group-by`, groupBy)}
         >
           Save View
@@ -468,7 +468,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
       </div>
 
       <div className="overflow-auto rounded-lg border">
-        <table className="w-full text-sm">
+        <table className="min-w-[1120px] text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="border-b bg-[#061a33]">
@@ -558,7 +558,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
         }}
       >
         <div
-          className="grid min-w-[1180px] items-center gap-2 px-3 py-2"
+          className="grid min-w-[1120px] items-center gap-2 px-3 py-2"
           style={{
             gridTemplateColumns: "44px 260px 130px 120px 110px 150px 150px 140px 48px",
           }}

@@ -68,10 +68,10 @@ export function TimeTrackerPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Time Tracker</h1>
-        <div className="flex items-center gap-4 rounded-lg border bg-white px-4 py-2 text-sm font-semibold">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-lg font-bold sm:text-xl">Time Tracker</h1>
+        <div className="flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold sm:w-auto sm:gap-4 sm:px-4">
           <button className="px-2 text-muted-foreground">‹</button>
           <span>04-may – 10-may</span>
           <button className="px-2 text-muted-foreground">›</button>
@@ -79,14 +79,14 @@ export function TimeTrackerPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Summary label="Total Entries" value={String(entries.length)} />
         <Summary label="Total Earned" value={`$${total.toFixed(2)}`} accent />
         <Summary label="Completed" value={`${completed} / ${entries.length}`} />
       </div>
 
       <div className="overflow-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
+        <table className="min-w-[900px] text-sm">
           <thead className="bg-slate-100 text-xs uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-3 text-left">Start Date</th>

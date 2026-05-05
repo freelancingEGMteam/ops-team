@@ -40,14 +40,14 @@ export function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl font-bold sm:text-2xl">
           {greeting}, {user?.name?.split(" ")[0]}
         </h1>
         <p className="mt-1 text-muted-foreground">Here's what's going on today.</p>
       </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:mb-8 lg:grid-cols-5">
         <StatCard label="To Do" value={counts.todo} icon={<ListTodo className="h-5 w-5 text-slate-500" />} />
         <StatCard label="In Progress" value={counts.in_progress} icon={<CircleDashed className="h-5 w-5 text-blue-500" />} />
         <StatCard label="In Review" value={counts.in_review} icon={<CircleDashed className="h-5 w-5 text-violet-500" />} />
@@ -55,7 +55,7 @@ export function DashboardPage() {
         <StatCard label="Cancelled" value={counts.cancelled} icon={<CircleDashed className="h-5 w-5 text-red-500" />} />
       </div>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Projects</h2>
         <Button asChild size="sm" variant="outline">
           <Link to="/projects/new">
@@ -108,7 +108,7 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
+    <div className="rounded-xl border bg-card p-3 sm:p-4">
       <div className="mb-2">{icon}</div>
       <p className="text-2xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>

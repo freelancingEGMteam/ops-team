@@ -43,14 +43,14 @@ export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div className="-mx-3 flex gap-3 overflow-x-auto px-3 pb-4 sm:mx-0 sm:px-0">
       {stages.map((stage) => {
         const stageStyle = getStageStyle(stage.name);
         return (
           <div
           key={stage.id}
           className={cn(
-            "flex w-72 shrink-0 flex-col rounded-xl border bg-muted/30 transition-colors",
+            "flex w-[82vw] shrink-0 flex-col rounded-xl border bg-muted/30 transition-colors sm:w-72",
             dragOver === stage.id && "ring-2 ring-primary"
           )}
           onDragOver={(e) => {

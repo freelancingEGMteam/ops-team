@@ -29,14 +29,14 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r bg-card">
+    <aside className="flex w-full shrink-0 flex-col border-b bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
       {/* Logo */}
-      <div className="flex h-14 items-center px-4 font-bold text-primary">
+      <div className="flex h-12 items-center px-3 font-bold text-primary md:h-14 md:px-4">
         <span className="text-lg">⚡ Ops</span>
       </div>
 
       {/* Primary nav */}
-      <nav className="flex flex-col gap-0.5 px-2 py-2">
+      <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:gap-0.5 md:py-2">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -44,7 +44,7 @@ export function Sidebar() {
             end={to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -58,7 +58,7 @@ export function Sidebar() {
       </nav>
 
       {/* Projects section */}
-      <div className="mt-4 px-2">
+      <div className="border-t px-2 py-2 md:mt-4 md:border-t-0 md:py-0">
         <div className="flex items-center justify-between px-3 py-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Projects
@@ -72,14 +72,14 @@ export function Sidebar() {
             <Plus className="h-3 w-3" />
           </Button>
         </div>
-        <div className="mt-1 flex flex-col gap-0.5">
+        <div className="mt-1 flex gap-1 overflow-x-auto md:flex-col md:gap-0.5 md:overflow-visible">
           {projects?.slice(0, 8).map((p) => (
             <NavLink
               key={p.id}
               to={`/projects/${p.id}`}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+                  "flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors md:shrink",
                   isActive
                     ? "bg-accent text-accent-foreground font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -97,7 +97,7 @@ export function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="mt-auto border-t p-3">
+      <div className="mt-auto hidden border-t p-3 md:block">
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7">
             {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}

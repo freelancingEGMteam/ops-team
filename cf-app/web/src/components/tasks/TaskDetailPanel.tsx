@@ -125,15 +125,15 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
       {/* Sliding panel */}
       <div
         className={cn(
-          "fixed top-0 right-0 h-full bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out border-l border-slate-200"
+          "fixed top-0 right-0 z-50 flex h-full flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out"
         )}
         style={{
-          width: "min(680px, 95vw)",
+          width: "min(680px, 100vw)",
           transform: visible ? "translateX(0)" : "translateX(100%)",
         }}
       >
         {/* Panel header */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-[#0f172a] px-6 py-4 flex-shrink-0">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-[#0f172a] px-4 py-4 sm:px-6">
           <span className="text-xs font-semibold uppercase tracking-widest text-white/60">
             Task Details
           </span>
@@ -149,7 +149,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
         {row && (
           <div className="flex-1 overflow-y-auto">
             {/* Title section */}
-            <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+            <div className="border-b border-slate-100 px-4 pb-4 pt-5 sm:px-6 sm:pt-6">
               <InlineTextCell
                 value={row.task.name}
                 onCommit={(name) => updateTask.mutate({ id: row.task.id, data: { name } })}
@@ -158,8 +158,8 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             </div>
 
             {/* Fields */}
-            <div className="px-6 py-4 border-b border-slate-100">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Status</p>
                   <InlineSelectCell
@@ -299,7 +299,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
               </div>
             </div>
 
-            <div className="px-6 py-4 border-b border-slate-100">
+            <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Google Drive Link</p>
               <input
                 className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
@@ -315,7 +315,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             </div>
 
             {/* Description */}
-            <div className="px-6 py-4 border-b border-slate-100">
+            <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Description</p>
               <textarea
                 className="w-full min-h-[120px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-y transition-colors"
@@ -331,7 +331,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             </div>
 
             {/* Attachments placeholder */}
-            <div className="px-6 py-4 border-b border-slate-100">
+            <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
                 <Paperclip className="h-3 w-3" /> Attachments
               </p>
@@ -371,7 +371,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             </div>
 
             {/* Comments */}
-            <div className="px-6 py-4">
+            <div className="px-4 py-4 sm:px-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
                 <MessageSquare className="h-3 w-3" /> Comments
               </p>
@@ -401,7 +401,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                 ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
                   placeholder="Write a comment… (Enter to post)"

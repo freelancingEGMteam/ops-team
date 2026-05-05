@@ -27,7 +27,7 @@ export function NewProjectPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-xl font-bold">New project</h1>
+      <h1 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">New project</h1>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -57,7 +57,7 @@ export function NewProjectPage() {
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium">Color</label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {COLORS.map((c) => (
               <button
                 key={c}
@@ -72,7 +72,7 @@ export function NewProjectPage() {
             ))}
           </div>
         </div>
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-col gap-2 pt-2 sm:flex-row">
           <Button type="submit" disabled={!name.trim() || create.isPending}>
             {create.isPending ? "Creating…" : "Create project"}
           </Button>
