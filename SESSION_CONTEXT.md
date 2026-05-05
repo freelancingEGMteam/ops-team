@@ -170,6 +170,17 @@ Added on 2026-05-05:
 - Current reset flow creates a copyable reset link in the UI. Email delivery is not connected yet.
 - CORS allows `ops-team.pages.dev`, `ops-web-siu.pages.dev`, and their preview subdomains.
 
+## Task Assignment UX Update
+
+Added on 2026-05-05:
+
+- Commit: `f9bcdab fix: improve task dropdown assignment UX`
+- Assignee dropdowns now use the full registered user list from User Management.
+- Inline dropdowns render in a floating page layer so long option lists do not block or distort the table rows.
+- Deployed to `ops-team` production: `https://35ce9b81.ops-team.pages.dev`
+- Deployed to `ops-web` production: `https://467a90f0.ops-web-siu.pages.dev`
+- Production pages verified serving `assets/index-DIxbDSZa.js`.
+
 ## Preview Account Used Locally
 
 Local preview account:
