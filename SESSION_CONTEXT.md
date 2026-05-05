@@ -213,6 +213,22 @@ Added on 2026-05-05:
 - Trigger examples: requests mentioning `ops-team`, `ops-team.pages.dev`, `ops-web-siu.pages.dev`, `ops-api.matiasvalencas.workers.dev`, the GitHub repo, Cloudflare deployment, task table, pipeline, calendar, user management, password reset, or stage values.
 - The skill frontmatter and content were manually checked. The quick validator could not run because this Python environment is missing the `yaml` package.
 
+## Responsive Layout Update
+
+Added on 2026-05-05:
+
+- Commit: `4f9c9ce fix: improve responsive layout spacing`
+- Mobile/tablet shell now stacks the navigation above the page and uses smaller page padding.
+- Sidebar nav and project links scroll horizontally on small screens.
+- Project header controls wrap/scroll instead of squeezing.
+- Task, Time Tracker, and Users tables keep stable minimum widths inside horizontal scroll containers.
+- Task detail panel uses full mobile width and single-column fields on small screens.
+- Pipeline columns use mobile viewport width so cards do not feel cramped.
+- Calendar spacing and labels were tightened for small screens.
+- `ops-team` production deployment: `https://58ca186b.ops-team.pages.dev`
+- `ops-web` production deployment: `https://69444bca.ops-web-siu.pages.dev`
+- Production pages verified serving `assets/index-B5pAl676.js`.
+
 ## Preview Account Used Locally
 
 Local preview account:
