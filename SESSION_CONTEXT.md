@@ -114,6 +114,17 @@ Migrations added:
 
 Cloudflare Pages should redeploy the frontend automatically after pushing `main`.
 
+Final production state from this session:
+
+- Latest pushed commit on `main`: `19ac9e9 chore: wire production api config`
+- Stable tag: `stable-2026-05-05-ops-ui`
+- API Worker: `https://ops-api.matiasvalencas.workers.dev`
+- Latest verified Worker version from deploy: `7f5ef06b-1934-408d-afe0-91fcda65726a`
+- Production D1 migrations applied remotely through `0004_task_link.sql`.
+- `JWT_SECRET` is stored in Cloudflare as a Worker secret, not committed in `wrangler.toml`.
+- API CORS allows local dev plus `https://ops-web-siu.pages.dev`.
+- Web config points `VITE_API_URL` to `https://ops-api.matiasvalencas.workers.dev`.
+
 The backend changes require deploying the Cloudflare Worker API and applying D1 migrations in production:
 
 ```powershell
@@ -134,6 +145,8 @@ corepack pnpm deploy
 
 - `corepack pnpm typecheck` in `cf-app/api` passed.
 - `corepack pnpm build` in `cf-app/web` passed.
+- Live health check passed: `https://ops-api.matiasvalencas.workers.dev/health`.
+- CORS was verified for origin `https://ops-web-siu.pages.dev`.
 
 ## Preview Account Used Locally
 
