@@ -8,6 +8,7 @@ import {
   HiOutlineChartPie,
   HiOutlineServerStack,
   HiOutlineVideoCamera,
+  HiOutlineUsers,
 } from 'react-icons/hi2'
 import { Button, Scrollbar } from '@ui-components'
 import { AiOutlinePlus } from 'react-icons/ai'
@@ -80,6 +81,12 @@ function ProjectNavListContainer({ orgName }: { orgName: string }) {
       href: `/${orgName}/report`,
       icon: HiOutlineChartPie,
       active: pathname.includes(`${orgName}/report`)
+    },
+    {
+      title: 'Users',
+      href: `/${orgName}/users`,
+      icon: HiOutlineUsers,
+      active: pathname.includes(`${orgName}/users`)
     },
     // {
     //   title: 'Settings',

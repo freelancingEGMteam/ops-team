@@ -9,12 +9,6 @@ export const useDefaultViewTypes = () => {
       desc: 'Use List view to organize your tasks in anyway imaginable – sort, filter, group, and customize columns.'
     },
     {
-      icon: 'HiOutlineViewColumns',
-      type: ProjectViewType.BOARD,
-      title: 'Board',
-      desc: 'Build your perfect Board and easily drag-and-drop tasks between columns.'
-    },
-    {
       icon: 'HiOutlineCalendar',
       type: ProjectViewType.CALENDAR,
       title: 'Calendar',

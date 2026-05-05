@@ -25,6 +25,8 @@ export default function ProjectViewList({ onUpdate }: { onUpdate: (id: string) =
     push(`${params.orgName}/project/${params.projectId}?mode=${name}`)
   }
 
+  const filteredViews = views.filter(v => v.name.toLowerCase() !== 'board')
+
   return (
     <>
       {!views.length ? (
@@ -32,7 +34,7 @@ export default function ProjectViewList({ onUpdate }: { onUpdate: (id: string) =
           <Loading enabled={true} title='Loading views ...' />
         </div>
       ) : null}
-      {views.map((view, index) => {
+      {filteredViews.map((view, index) => {
         const active = mode === view.id
         const { icon, onlyMe } = view
 

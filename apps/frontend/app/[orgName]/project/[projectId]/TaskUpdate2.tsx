@@ -1,4 +1,6 @@
-import { Dialog, messageError, messageSuccess } from '@ui-components'
+'use client'
+
+import { messageError, messageSuccess } from '@ui-components'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ITaskDefaultValues, defaultFormikValues } from './TaskForm'
 import { useTaskStore } from '@/store/task'
@@ -9,49 +11,74 @@ import { useTaskAutomation } from '@/hooks/useTaskAutomation'
 import FileKitContainer from '@/components/FileKits'
 import TaskDetail from '@/features/TaskDetail'
 import { deleteState, onPushStateRun } from 'apps/frontend/libs/pushState'
+import { HiOutlineXMark } from 'react-icons/hi2'
 
 
-function TaskUpdateModal({
+function TaskRightPanel({
   id,
   visible,
   setVisible,
   task,
   onSubmit
-}:
-  {
-    id: string
-    task: ITaskDefaultValues,
-    visible: boolean,
-    setVisible: () => void,
-    onSubmit: (v: ITaskDefaultValues, cb: () => void) => void
-  }) {
+}: {
+  id: string
+  task: ITaskDefaultValues
+  visible: boolean
+  setVisible: () => void
+  onSubmit: (v: ITaskDefaultValues, cb: () => void) => void
+}) {
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          visible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={setVisible}
+      />
 
-  return <Dialog.Root open={visible} onOpenChange={() => {
-    setVisible()
-  }}>
-    <Dialog.Portal>
-      <Dialog.Content size='lg'>
-        <FileKitContainer taskId={id} fileIds={task.fileIds}>
-          <TaskDetail
-            id={id || ''}
-            cover={task.cover || ''}
-            defaultValue={task}
-            onSubmit={onSubmit}
-          />
-        </FileKitContainer>
-      </Dialog.Content>
-    </Dialog.Portal>
-  </Dialog.Root>
+      {/* Sliding right panel */}
+      <div
+        className={`fixed top-0 right-0 h-full bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          visible ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ width: 'min(720px, 95vw)' }}>
 
+        {/* Panel header */}
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
+          <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Task Details
+          </span>
+          <button
+            onClick={setVisible}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-gray-800 dark:hover:text-slate-300 transition-colors">
+            <HiOutlineXMark className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Panel body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {visible && (
+            <FileKitContainer taskId={id} fileIds={task.fileIds}>
+              <TaskDetail
+                id={id || ''}
+                cover={task.cover || ''}
+                defaultValue={task}
+                onSubmit={onSubmit}
+              />
+            </FileKitContainer>
+          )}
+        </div>
+      </div>
+    </>
+  )
 }
 
 function useTaskIdChange(fn: (id: string) => void) {
   useEffect(() => {
     const destroy = onPushStateRun((url: string) => {
-
       const newUrl = new URL(url)
       const taskId = newUrl.searchParams.get('taskId')
-      // setTaskId(taskId || '')
       fn(taskId || '')
     })
 
@@ -66,9 +93,7 @@ function useTaskIdChange(fn: (id: string) => void) {
     if (taskId) {
       fn(taskId)
     }
-
   }, [])
-
 }
 
 export const TaskUpdate2 = () => {
@@ -86,13 +111,11 @@ export const TaskUpdate2 = () => {
     setTaskId(id)
   })
 
-
   useEffect(() => {
     if (!taskId) return
-
   }, [taskId])
 
-  const closeTheModal = () => {
+  const closeThePanel = () => {
     deleteState('taskId')
   }
 
@@ -107,11 +130,9 @@ export const TaskUpdate2 = () => {
     }
 
     updateTask(dataUpdate)
-    closeTheModal()
+    closeThePanel()
     refactorTaskFieldByAutomationConfig('task', dataUpdate)
 
-    // clear fileIds cuz we've updated fileIds already
-    // see <FileUpload /> component
     dataUpdate.fileIds = []
 
     taskUpdate(dataUpdate)
@@ -129,18 +150,10 @@ export const TaskUpdate2 = () => {
       .catch(err => {
         messageError('Update new task error')
         cb()
-
-        if (!refCurrentTask.current) return
-        // syncRemoteTaskById(refCurrentTask.current.id, refCurrentTask.current)
         console.log(err)
       })
   }
 
-  // When copy the url with taskId param and paste to another tab
-  // The form will be rendered first, the defaultValue updated later
-  // Thus, we need to make sure that the defaultValue update first
-  // That's why we use useLayoutEffect here
-  // It block render process and only run when the inside code run already
   useLayoutEffect(() => {
     if (!taskId || !tasks || !tasks.length) return
     const currentTask = tasks.find(task => task.id === taskId)
@@ -180,14 +193,15 @@ export const TaskUpdate2 = () => {
     }
   }, [taskId, tasks])
 
-  return <TaskUpdateModal
-    id={taskId}
-    task={currentTask}
-    onSubmit={handleSubmit}
-    visible={!!taskId}
-    setVisible={() => {
-      // closeTaskDetail()
-      deleteState('taskId')
-      // router.replace(`${orgID}/project/${projectId}?mode=${mode}`)
-    }} />
+  return (
+    <TaskRightPanel
+      id={taskId}
+      task={currentTask}
+      onSubmit={handleSubmit}
+      visible={!!taskId}
+      setVisible={() => {
+        deleteState('taskId')
+      }}
+    />
+  )
 }
