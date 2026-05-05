@@ -4,7 +4,7 @@ compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-CORS_ORIGIN = "http://localhost:5173,https://ops-web-siu.pages.dev"
+CORS_ORIGIN = "http://localhost:5173,https://ops-web-siu.pages.dev,https://ops-team.pages.dev"
 
 [[d1_databases]]
 binding = "DB"

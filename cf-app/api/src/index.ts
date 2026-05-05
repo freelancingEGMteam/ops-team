@@ -26,7 +26,16 @@ app.use(
         return origin || "*";
       }
 
-      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+      const originHost = new URL(origin).hostname;
+      const isAllowedPreview =
+        originHost === "ops-team.pages.dev" ||
+        originHost.endsWith(".ops-team.pages.dev") ||
+        originHost === "ops-web-siu.pages.dev" ||
+        originHost.endsWith(".ops-web-siu.pages.dev");
+
+      return allowedOrigins.includes(origin) || isAllowedPreview
+        ? origin
+        : allowedOrigins[0];
     },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
