@@ -80,6 +80,16 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ name, email, password }),
       }),
+    requestPasswordReset: (email: string, origin: string) =>
+      request<{ message: string; resetLink?: string }>("/api/auth/password-reset", {
+        method: "POST",
+        body: JSON.stringify({ email, origin }),
+      }),
+    confirmPasswordReset: (token: string, password: string) =>
+      request<{ success: boolean }>("/api/auth/password-reset/confirm", {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
+      }),
   },
 
   users: {

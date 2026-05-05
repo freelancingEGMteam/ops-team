@@ -56,6 +56,14 @@ export function LoginPage() {
             required
             autoComplete="current-password"
           />
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="mt-1" disabled={login.isPending}>
             {login.isPending ? "Signing in…" : "Sign in"}

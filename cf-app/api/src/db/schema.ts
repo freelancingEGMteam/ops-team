@@ -131,6 +131,23 @@ export const taskAttachments = sqliteTable("task_attachments", {
     .default(sql`(unixepoch() * 1000)`),
 });
 
+export const passwordResetTokens = sqliteTable(
+  "password_reset_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => [uniqueIndex("password_reset_tokens_hash_idx").on(t.tokenHash)]
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Project = typeof projects.$inferSelect;
@@ -141,3 +158,4 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
 export type TaskComment = typeof taskComments.$inferSelect;
 export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
