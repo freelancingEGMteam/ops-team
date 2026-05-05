@@ -16,7 +16,18 @@ app.use("*", prettyJSON());
 app.use(
   "*",
   cors({
-    origin: (origin, c) => c.env.CORS_ORIGIN || "*",
+    origin: (origin, c) => {
+      const allowedOrigins = (c.env.CORS_ORIGIN || "")
+        .split(",")
+        .map((value: string) => value.trim())
+        .filter(Boolean);
+
+      if (!origin || allowedOrigins.length === 0) {
+        return origin || "*";
+      }
+
+      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+    },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
