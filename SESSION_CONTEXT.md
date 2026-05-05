@@ -181,6 +181,28 @@ Added on 2026-05-05:
 - Deployed to `ops-web` production: `https://467a90f0.ops-web-siu.pages.dev`
 - Production pages verified serving `assets/index-DIxbDSZa.js`.
 
+## Stage Values And Dropdown Overlay Update
+
+Added on 2026-05-05:
+
+- Commit: `c6f6a9a fix: normalize stage values and dropdown overlays`
+- Stage values are canonical and ordered:
+  - Idea Only
+  - Script/Lyrics Generation
+  - Audio/Album Generation
+  - Image/Video Generation
+  - Video Editing
+  - SEO&Metadata
+  - Final Revision
+  - Modifications Needed
+- Existing live project `32bdf31b3a8baec7270c46c6e44140b6` was synced in D1 to those eight stage values/colors.
+- Stage badges use the colored labels shown in the user's reference.
+- Inline dropdown menus render in a high-z-index portal above the table.
+- API Worker version after deploy: `b7c0e9dc-52b7-421b-8eac-5c62d411e868`
+- `ops-team` production deployment: `https://0b7681b2.ops-team.pages.dev`
+- `ops-web` production deployment: `https://13426ef3.ops-web-siu.pages.dev`
+- Production pages verified serving `assets/index-mdw5D_yU.js`.
+
 ## Preview Account Used Locally
 
 Local preview account:
