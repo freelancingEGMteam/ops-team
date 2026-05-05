@@ -203,6 +203,16 @@ Added on 2026-05-05:
 - `ops-web` production deployment: `https://13426ef3.ops-web-siu.pages.dev`
 - Production pages verified serving `assets/index-mdw5D_yU.js`.
 
+## Codex Skill For Future Sessions
+
+Added on 2026-05-05:
+
+- Local skill path: `C:\Users\Family\.codex\skills\ops-team-project`
+- Skill name: `ops-team-project`
+- Purpose: preserve the project basics for future Codex sessions without re-explaining the repo, URLs, deployment workflow, production branch gotchas, stable tag, canonical stage values, and validation checklist.
+- Trigger examples: requests mentioning `ops-team`, `ops-team.pages.dev`, `ops-web-siu.pages.dev`, `ops-api.matiasvalencas.workers.dev`, the GitHub repo, Cloudflare deployment, task table, pipeline, calendar, user management, password reset, or stage values.
+- The skill frontmatter and content were manually checked. The quick validator could not run because this Python environment is missing the `yaml` package.
+
 ## Preview Account Used Locally
 
 Local preview account:
