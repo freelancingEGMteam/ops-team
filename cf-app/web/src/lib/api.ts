@@ -9,7 +9,8 @@ import type {
   User,
 } from "@/types";
 
-const BASE = import.meta.env.VITE_API_URL ?? "";
+const BASE =
+  import.meta.env.VITE_API_URL ?? "https://ops-api.matiasvalencas.workers.dev";
 
 function getToken(): string | null {
   return localStorage.getItem("token");
