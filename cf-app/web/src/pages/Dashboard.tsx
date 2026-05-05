@@ -1,17 +1,35 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { FolderKanban, CheckSquare, Plus } from "lucide-react";
+import { CheckCircle2, CircleDashed, FolderKanban, ListTodo, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
+import { type TaskRow, type TaskStatus } from "@/types";
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
 
-  const { data: projects } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ["projects"],
     queryFn: api.projects.list,
   });
+
+  const { data: taskRowsByProject = [] } = useQuery({
+    queryKey: ["dashboard-tasks", projects.map((project) => project.id).join(",")],
+    queryFn: async () => {
+      const all = await Promise.all(projects.map((project) => api.tasks.list(project.id)));
+      return all.flat();
+    },
+    enabled: projects.length > 0,
+  });
+
+  const counts = taskRowsByProject.reduce<Record<TaskStatus, number>>(
+    (acc, row: TaskRow) => {
+      acc[row.task.status] += 1;
+      return acc;
+    },
+    { todo: 0, in_progress: 0, in_review: 0, done: 0, cancelled: 0 }
+  );
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -24,26 +42,19 @@ export function DashboardPage() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">
-          {greeting}, {user?.name?.split(" ")[0]} 👋
+          {greeting}, {user?.name?.split(" ")[0]}
         </h1>
         <p className="mt-1 text-muted-foreground">Here's what's going on today.</p>
       </div>
 
-      {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard
-          label="Projects"
-          value={projects?.length ?? 0}
-          icon={<FolderKanban className="h-5 w-5 text-primary" />}
-        />
-        <StatCard
-          label="Open Tasks"
-          value="—"
-          icon={<CheckSquare className="h-5 w-5 text-emerald-500" />}
-        />
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <StatCard label="To Do" value={counts.todo} icon={<ListTodo className="h-5 w-5 text-slate-500" />} />
+        <StatCard label="In Progress" value={counts.in_progress} icon={<CircleDashed className="h-5 w-5 text-blue-500" />} />
+        <StatCard label="In Review" value={counts.in_review} icon={<CircleDashed className="h-5 w-5 text-violet-500" />} />
+        <StatCard label="Done" value={counts.done} icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />} />
+        <StatCard label="Cancelled" value={counts.cancelled} icon={<CircleDashed className="h-5 w-5 text-red-500" />} />
       </div>
 
-      {/* Projects grid */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Projects</h2>
         <Button asChild size="sm" variant="outline">
@@ -54,7 +65,7 @@ export function DashboardPage() {
         </Button>
       </div>
 
-      {projects?.length === 0 && (
+      {projects.length === 0 && (
         <div className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
           <FolderKanban className="mx-auto mb-3 h-8 w-8 opacity-40" />
           <p className="text-sm">No projects yet.</p>
@@ -65,7 +76,7 @@ export function DashboardPage() {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {projects?.map((p) => (
+        {projects.map((p) => (
           <Link
             key={p.id}
             to={`/projects/${p.id}`}

@@ -2,8 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
-  FolderKanban,
-  CheckSquare,
+  Clock3,
   LogOut,
   Plus,
   Users,
@@ -16,8 +15,7 @@ import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/projects", icon: FolderKanban, label: "Projects" },
-  { to: "/tasks", icon: CheckSquare, label: "My Tasks" },
+  { to: "/time-tracker", icon: Clock3, label: "Time Tracker" },
   { to: "/users", icon: Users, label: "Users" },
 ];
 

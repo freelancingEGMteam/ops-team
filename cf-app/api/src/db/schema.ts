@@ -71,6 +71,7 @@ export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  link: text("link"),
   status: text("status", {
     enum: ["todo", "in_progress", "in_review", "done", "cancelled"],
   })
@@ -85,6 +86,7 @@ export const tasks = sqliteTable("tasks", {
   stageId: text("stage_id").references(() => stages.id, {
     onDelete: "set null",
   }),
+  channel: text("channel", { enum: ["BIV", "EGM"] }),
   projectId: text("project_id")
     .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
@@ -112,6 +114,23 @@ export const taskComments = sqliteTable("task_comments", {
     .default(sql`(unixepoch() * 1000)`),
 });
 
+export const taskAttachments = sqliteTable("task_attachments", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  uploaderId: text("uploader_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type"),
+  fileSize: integer("file_size").notNull().default(0),
+  r2Key: text("r2_key").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Project = typeof projects.$inferSelect;
@@ -121,3 +140,4 @@ export type InsertStage = typeof stages.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
 export type TaskComment = typeof taskComments.$inferSelect;
+export type TaskAttachment = typeof taskAttachments.$inferSelect;

@@ -3,7 +3,14 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, asc } from "drizzle-orm";
 import { createDb } from "../db/client";
-import { tasks, projectMembers, users, stages } from "../db/schema";
+import {
+  tasks,
+  projectMembers,
+  users,
+  stages,
+  taskComments,
+  taskAttachments,
+} from "../db/schema";
 import { authMiddleware } from "../middleware/auth";
 import { nanoid } from "../lib/jwt";
 import type { Bindings, Variables } from "../types";
@@ -14,16 +21,19 @@ router.use("*", authMiddleware);
 
 const taskStatus = z.enum(["todo", "in_progress", "in_review", "done", "cancelled"]);
 const taskPriority = z.enum(["low", "medium", "high", "urgent"]);
+const taskChannel = z.enum(["BIV", "EGM"]);
 
 const createTaskSchema = z.object({
   name: z.string().min(1).max(300),
   description: z.string().max(5000).optional(),
+  link: z.string().url().or(z.literal("")).nullable().optional(),
   projectId: z.string(),
-  stageId: z.string().optional(),
-  assigneeId: z.string().optional(),
+  stageId: z.string().nullable().optional(),
+  assigneeId: z.string().nullable().optional(),
   status: taskStatus.optional(),
   priority: taskPriority.optional(),
-  dueDate: z.string().datetime().optional(),
+  dueDate: z.string().datetime().nullable().optional(),
+  channel: taskChannel.nullable().optional(),
   orderIndex: z.number().int().min(0).optional(),
 });
 
@@ -33,6 +43,10 @@ const reorderSchema = z.object({
   taskId: z.string(),
   stageId: z.string().nullable(),
   orderIndex: z.number().int().min(0),
+});
+
+const createCommentSchema = z.object({
+  body: z.string().min(1).max(5000),
 });
 
 async function requireMembership(
@@ -110,12 +124,14 @@ router.post("/", zValidator("json", createTaskSchema), async (c) => {
     id,
     name: body.name,
     description: body.description,
+    link: body.link,
     projectId: body.projectId,
     stageId: body.stageId,
     assigneeId: body.assigneeId,
     status: body.status ?? "todo",
     priority: body.priority ?? "medium",
     dueDate: body.dueDate ? new Date(body.dueDate) : null,
+    channel: body.channel,
     orderIndex: body.orderIndex ?? 0,
     createdAt: now,
     updatedAt: now,
@@ -143,6 +159,175 @@ router.get("/:id", async (c) => {
   if (!membership) return c.json({ error: "Not found" }, 404);
 
   return c.json(row);
+});
+
+router.get("/:id/comments", async (c) => {
+  const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
+  const taskId = c.req.param("id");
+
+  const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).get();
+  if (!task) return c.json({ error: "Not found" }, 404);
+
+  const membership = await requireMembership(db, task.projectId, userId);
+  if (!membership) return c.json({ error: "Not found" }, 404);
+
+  const rows = await db
+    .select({
+      id: taskComments.id,
+      taskId: taskComments.taskId,
+      body: taskComments.body,
+      createdAt: taskComments.createdAt,
+      author: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatar: users.avatar,
+      },
+    })
+    .from(taskComments)
+    .innerJoin(users, eq(taskComments.authorId, users.id))
+    .where(eq(taskComments.taskId, taskId))
+    .orderBy(asc(taskComments.createdAt))
+    .all();
+
+  return c.json(rows);
+});
+
+router.post("/:id/comments", zValidator("json", createCommentSchema), async (c) => {
+  const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
+  const taskId = c.req.param("id");
+  const body = c.req.valid("json");
+
+  const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).get();
+  if (!task) return c.json({ error: "Not found" }, 404);
+
+  const membership = await requireMembership(db, task.projectId, userId);
+  if (!membership) return c.json({ error: "Forbidden" }, 403);
+
+  const id = nanoid();
+  const now = new Date();
+
+  await db.insert(taskComments).values({
+    id,
+    taskId,
+    authorId: userId,
+    body: body.body,
+    createdAt: now,
+  });
+
+  const row = await db
+    .select({
+      id: taskComments.id,
+      taskId: taskComments.taskId,
+      body: taskComments.body,
+      createdAt: taskComments.createdAt,
+      author: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatar: users.avatar,
+      },
+    })
+    .from(taskComments)
+    .innerJoin(users, eq(taskComments.authorId, users.id))
+    .where(eq(taskComments.id, id))
+    .get();
+
+  return c.json(row, 201);
+});
+
+router.get("/:id/attachments", async (c) => {
+  const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
+  const taskId = c.req.param("id");
+
+  const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).get();
+  if (!task) return c.json({ error: "Not found" }, 404);
+
+  const membership = await requireMembership(db, task.projectId, userId);
+  if (!membership) return c.json({ error: "Not found" }, 404);
+
+  const rows = await db
+    .select({
+      id: taskAttachments.id,
+      taskId: taskAttachments.taskId,
+      fileName: taskAttachments.fileName,
+      fileType: taskAttachments.fileType,
+      fileSize: taskAttachments.fileSize,
+      createdAt: taskAttachments.createdAt,
+      uploader: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatar: users.avatar,
+      },
+    })
+    .from(taskAttachments)
+    .innerJoin(users, eq(taskAttachments.uploaderId, users.id))
+    .where(eq(taskAttachments.taskId, taskId))
+    .orderBy(asc(taskAttachments.createdAt))
+    .all();
+
+  return c.json(rows);
+});
+
+router.post("/:id/attachments", async (c) => {
+  const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
+  const taskId = c.req.param("id");
+
+  const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).get();
+  if (!task) return c.json({ error: "Not found" }, 404);
+
+  const membership = await requireMembership(db, task.projectId, userId);
+  if (!membership) return c.json({ error: "Forbidden" }, 403);
+
+  const form = await c.req.formData();
+  const file = form.get("file") as unknown as File | null;
+  if (!file || typeof file === "string") return c.json({ error: "file required" }, 400);
+
+  const id = nanoid();
+  const now = new Date();
+  const r2Key = `tasks/${taskId}/${id}-${file.name}`;
+
+  await c.env.FILES.put(r2Key, file.stream(), {
+    httpMetadata: { contentType: file.type || "application/octet-stream" },
+  });
+
+  await db.insert(taskAttachments).values({
+    id,
+    taskId,
+    uploaderId: userId,
+    fileName: file.name,
+    fileType: file.type || null,
+    fileSize: file.size,
+    r2Key,
+    createdAt: now,
+  });
+
+  const row = await db
+    .select({
+      id: taskAttachments.id,
+      taskId: taskAttachments.taskId,
+      fileName: taskAttachments.fileName,
+      fileType: taskAttachments.fileType,
+      fileSize: taskAttachments.fileSize,
+      createdAt: taskAttachments.createdAt,
+      uploader: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatar: users.avatar,
+      },
+    })
+    .from(taskAttachments)
+    .innerJoin(users, eq(taskAttachments.uploaderId, users.id))
+    .where(eq(taskAttachments.id, id))
+    .get();
+
+  return c.json(row, 201);
 });
 
 router.patch("/:id", zValidator("json", updateTaskSchema), async (c) => {

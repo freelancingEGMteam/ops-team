@@ -12,7 +12,14 @@ router.use("*", authMiddleware);
 router.get("/", async (c) => {
   const db = createDb(c.env.DB);
   const rows = await db
-    .select({ id: users.id, name: users.name, email: users.email, avatar: users.avatar, role: users.role })
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      avatar: users.avatar,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
     .from(users)
     .all();
   return c.json(rows);
@@ -23,7 +30,14 @@ router.get("/me", async (c) => {
   const userId = c.get("user").sub;
 
   const user = await db
-    .select({ id: users.id, name: users.name, email: users.email, avatar: users.avatar, role: users.role })
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      avatar: users.avatar,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
     .from(users)
     .where(eq(users.id, userId))
     .get();

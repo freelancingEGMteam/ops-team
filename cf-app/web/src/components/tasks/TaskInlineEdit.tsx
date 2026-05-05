@@ -32,7 +32,10 @@ export function InlineTextCell({ value, onCommit, className, placeholder }: Inli
           !value && "text-muted-foreground",
           className
         )}
-        onClick={() => setEditing(true)}
+        onClick={(event) => {
+          event.stopPropagation();
+          setEditing(true);
+        }}
       >
         {value || placeholder || "—"}
       </span>
@@ -43,6 +46,7 @@ export function InlineTextCell({ value, onCommit, className, placeholder }: Inli
     <input
       ref={inputRef}
       value={draft}
+      onClick={(event) => event.stopPropagation()}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -85,10 +89,13 @@ export function InlineSelectCell<T extends string>({
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" onClick={(event) => event.stopPropagation()}>
       <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 hover:bg-accent"
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        className="flex min-h-8 w-full cursor-pointer items-center gap-1 rounded px-2 py-1 text-left hover:bg-accent"
       >
         {renderValue ? renderValue(value) : value}
       </button>

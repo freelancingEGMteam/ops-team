@@ -1,15 +1,26 @@
 import * as React from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutGrid, List } from "lucide-react";
+import { CalendarDays, LayoutGrid, List } from "lucide-react";
 import { api } from "@/lib/api";
 import { TaskTable } from "@/components/tasks/TaskTable";
-import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { TaskPipeline } from "@/components/tasks/TaskPipeline";
+import { TaskCalendar } from "@/components/tasks/TaskCalendar";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { Button } from "@/components/ui/button";
 import { type TaskRow } from "@/types";
 
-type ViewMode = "table" | "pipeline";
+type ViewMode = "table" | "pipeline" | "calendar";
+const STANDARD_STAGE_NAMES = [
+  "Idea Only",
+  "Script/Lyrics Generation",
+  "Audio/Album Generation",
+  "Image/Video Generation",
+  "Video Editing",
+  "SEO&Metadata",
+  "Final Revision",
+  "Modifications Needed",
+];
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +44,23 @@ export function ProjectDetailPage() {
     queryFn: () => api.tasks.list(id!),
     enabled: !!id,
   });
+
+  const workflowStages = React.useMemo(() => {
+    const byName = new Map<string, (typeof stages)[number]>();
+    for (const stage of stages) {
+      if (!byName.has(stage.name)) byName.set(stage.name, stage);
+    }
+    const uniqueStages = Array.from(byName.values());
+    const standard = uniqueStages
+      .filter((stage) => STANDARD_STAGE_NAMES.includes(stage.name))
+      .sort(
+        (a, b) =>
+          STANDARD_STAGE_NAMES.indexOf(a.name) - STANDARD_STAGE_NAMES.indexOf(b.name)
+      );
+    return standard.length > 0
+      ? standard
+      : uniqueStages.sort((a, b) => a.orderIndex - b.orderIndex);
+  }, [stages]);
 
   if (projectLoading) {
     return <div className="text-muted-foreground text-sm">Loading project…</div>;
@@ -70,6 +98,15 @@ export function ProjectDetailPage() {
               <LayoutGrid className="h-3.5 w-3.5" />
               Pipeline
             </Button>
+            <Button
+              variant={view === "calendar" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7"
+              onClick={() => setView("calendar")}
+            >
+              <CalendarDays className="h-3.5 w-3.5" />
+              Calendar
+            </Button>
           </div>
         </div>
 
@@ -78,16 +115,20 @@ export function ProjectDetailPage() {
         ) : view === "table" ? (
           <TaskTable
             projectId={id!}
+            stages={workflowStages}
             rows={taskRows}
             onRowClick={(row) => setSelectedRow(row)}
           />
+        ) : view === "pipeline" ? (
+          <TaskPipeline projectId={id!} stages={workflowStages} rows={taskRows} />
         ) : (
-          <TaskBoard projectId={id!} stages={stages} rows={taskRows} />
+          <TaskCalendar rows={taskRows} />
         )}
       </div>
 
       <TaskDetailPanel
         row={selectedRow}
+        stages={workflowStages}
         onClose={() => setSelectedRow(null)}
       />
     </>

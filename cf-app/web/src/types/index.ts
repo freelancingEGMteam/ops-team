@@ -1,6 +1,7 @@
 export type UserRole = "owner" | "admin" | "member";
 export type TaskStatus = "todo" | "in_progress" | "in_review" | "done" | "cancelled";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type TaskChannel = "BIV" | "EGM";
 
 export interface User {
   id: string;
@@ -8,6 +9,7 @@ export interface User {
   name: string;
   avatar: string | null;
   role: UserRole;
+  createdAt: number;
 }
 
 export interface Project {
@@ -33,10 +35,12 @@ export interface Task {
   id: string;
   name: string;
   description: string | null;
+  link: string | null;
   status: TaskStatus;
   priority: TaskPriority;
   assigneeId: string | null;
   stageId: string | null;
+  channel: TaskChannel | null;
   projectId: string;
   dueDate: number | null;
   orderIndex: number;
@@ -48,6 +52,24 @@ export interface TaskRow {
   task: Task;
   assignee: Pick<User, "id" | "name" | "email" | "avatar"> | null;
   stage: Pick<Stage, "id" | "name" | "color"> | null;
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  body: string;
+  createdAt: number;
+  author: Pick<User, "id" | "name" | "email" | "avatar">;
+}
+
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  fileType: string | null;
+  fileSize: number;
+  createdAt: number;
+  uploader: Pick<User, "id" | "name" | "email" | "avatar">;
 }
 
 export interface AuthResponse {

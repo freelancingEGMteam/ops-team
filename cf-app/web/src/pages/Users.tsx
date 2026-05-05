@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Users as UsersIcon, Mail, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, formatDate, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { type User } from "@/types";
 
@@ -52,6 +52,7 @@ export function UsersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">User</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Role</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Created</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
               </tr>
             </thead>
@@ -81,6 +82,9 @@ export function UsersPage() {
                       <ShieldCheck className="h-3 w-3" />
                       {user.role}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {formatDate(user.createdAt)}
                   </td>
                   <td className="px-4 py-3">
                     <code className="text-[11px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">

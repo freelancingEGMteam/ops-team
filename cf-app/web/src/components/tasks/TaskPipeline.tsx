@@ -8,13 +8,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-interface TaskBoardProps {
+interface TaskPipelineProps {
   projectId: string;
   stages: Stage[];
   rows: TaskRow[];
 }
 
-export function TaskBoard({ projectId, stages, rows }: TaskBoardProps) {
+export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
   const qc = useQueryClient();
   const [newTaskStage, setNewTaskStage] = React.useState<string | null>(null);
   const [newTaskName, setNewTaskName] = React.useState("");

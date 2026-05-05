@@ -1,4 +1,13 @@
-import type { AuthResponse, Project, Stage, Task, TaskRow, User } from "@/types";
+import type {
+  AuthResponse,
+  Project,
+  Stage,
+  Task,
+  TaskAttachment,
+  TaskComment,
+  TaskRow,
+  User,
+} from "@/types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -27,6 +36,30 @@ async function request<T>(
 
   return res.json() as Promise<T>;
 }
+
+async function upload<T>(path: string, data: FormData): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: data,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, (body as { error?: string }).error ?? res.statusText);
+  }
+
+  return res.json() as Promise<T>;
+}
+
+type TaskUpdateInput = Partial<
+  Omit<Task, "id" | "projectId" | "createdAt" | "updatedAt" | "dueDate">
+> & {
+  dueDate?: string | null;
+};
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -99,8 +132,9 @@ export const api = {
       status?: Task["status"];
       priority?: Task["priority"];
       dueDate?: string;
+      channel?: Task["channel"];
     }) => request<Task>("/api/tasks", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: string, data: Partial<Omit<Task, "id" | "projectId" | "createdAt">>) =>
+    update: (id: string, data: TaskUpdateInput) =>
       request<Task>(`/api/tasks/${id}`, {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -112,5 +146,24 @@ export const api = {
         method: "POST",
         body: JSON.stringify(updates),
       }),
+  },
+
+  comments: {
+    list: (taskId: string) => request<TaskComment[]>(`/api/tasks/${taskId}/comments`),
+    create: (taskId: string, body: string) =>
+      request<TaskComment>(`/api/tasks/${taskId}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      }),
+  },
+
+  attachments: {
+    list: (taskId: string) =>
+      request<TaskAttachment[]>(`/api/tasks/${taskId}/attachments`),
+    upload: (taskId: string, file: File) => {
+      const data = new FormData();
+      data.append("file", file);
+      return upload<TaskAttachment>(`/api/tasks/${taskId}/attachments`, data);
+    },
   },
 };
