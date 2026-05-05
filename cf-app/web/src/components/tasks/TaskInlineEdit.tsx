@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 interface InlineCellProps {
@@ -78,15 +79,58 @@ export function InlineSelectCell<T extends string>({
   renderValue,
 }: InlineSelectProps<T>) {
   const [open, setOpen] = React.useState(false);
+  const [menuStyle, setMenuStyle] = React.useState<React.CSSProperties>({});
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  const updateMenuPosition = React.useCallback(() => {
+    const trigger = containerRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportPadding = 12;
+    const estimatedHeight = Math.min(260, 38 + options.length * 34);
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const openAbove = spaceBelow < estimatedHeight && rect.top > spaceBelow;
+    const top = openAbove
+      ? Math.max(viewportPadding, rect.top - estimatedHeight - 4)
+      : Math.min(rect.bottom + 4, window.innerHeight - viewportPadding);
+
+    setMenuStyle({
+      position: "fixed",
+      top,
+      left: Math.min(rect.left, window.innerWidth - 260 - viewportPadding),
+      minWidth: Math.max(rect.width, 160),
+      maxWidth: 260,
+      maxHeight: Math.min(260, openAbove ? rect.top - viewportPadding : spaceBelow),
+    });
+  }, [options.length]);
 
   React.useEffect(() => {
     function handler(e: MouseEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
+        setOpen(false);
+      }
     }
     if (open) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    updateMenuPosition();
+
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
+    return () => {
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    };
+  }, [open, updateMenuPosition]);
 
   return (
     <div ref={containerRef} className="relative" onClick={(event) => event.stopPropagation()}>
@@ -99,13 +143,19 @@ export function InlineSelectCell<T extends string>({
       >
         {renderValue ? renderValue(value) : value}
       </button>
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[140px] rounded-md border bg-popover p-1 shadow-lg">
+      {open &&
+        createPortal(
+        <div
+          ref={menuRef}
+          style={menuStyle}
+          className="z-[100] overflow-y-auto rounded-md border bg-popover p-1 shadow-xl"
+          onClick={(event) => event.stopPropagation()}
+        >
           {options.map((opt) => (
             <button
               key={opt.value}
               className={cn(
-                "flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent",
+                "flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent",
                 opt.className
               )}
               onClick={() => {
@@ -116,7 +166,8 @@ export function InlineSelectCell<T extends string>({
               {opt.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

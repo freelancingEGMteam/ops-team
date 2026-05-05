@@ -53,8 +53,8 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   }, [row?.task.id]);
 
   const { data: assignableUsers = [] } = useQuery({
-    queryKey: ["project-users", row?.task.projectId],
-    queryFn: () => api.users.byProject(row!.task.projectId),
+    queryKey: ["users"],
+    queryFn: api.users.list,
     enabled: !!row,
   });
 

@@ -82,8 +82,8 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
   }, [rows]);
 
   const { data: assignableUsers = [] } = useQuery({
-    queryKey: ["project-users", projectId],
-    queryFn: () => api.users.byProject(projectId),
+    queryKey: ["users"],
+    queryFn: api.users.list,
   });
 
   const updateTask = useMutation({
