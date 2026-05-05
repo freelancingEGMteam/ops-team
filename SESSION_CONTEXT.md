@@ -154,6 +154,22 @@ corepack pnpm deploy
 - Production Pages bundle was verified to include `ops-api.matiasvalencas.workers.dev`.
 - Production Pages root was verified to serve `assets/index-Bq4zj_AM.js`.
 
+## Password Reset Update
+
+Added on 2026-05-05:
+
+- Commit: `d35050a fix: allow pages preview origins`
+- Feature commit: `21fef3b feat: add password reset flow`
+- Migration applied remotely: `0005_password_reset_tokens.sql`
+- API Worker version after reset deploy: `54cce863-d336-4572-87fc-a4e9b72610be`
+- `ops-team` production deployment: `https://456c15b9.ops-team.pages.dev`
+- `ops-web` production deployment with reset UI: `https://5941e103.ops-web-siu.pages.dev`
+- Login page has a `Forgot password?` link.
+- Reset request page: `/forgot-password`
+- Reset confirmation page: `/reset-password?token=...`
+- Current reset flow creates a copyable reset link in the UI. Email delivery is not connected yet.
+- CORS allows `ops-team.pages.dev`, `ops-web-siu.pages.dev`, and their preview subdomains.
+
 ## Preview Account Used Locally
 
 Local preview account:
