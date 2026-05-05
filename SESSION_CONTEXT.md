@@ -120,8 +120,9 @@ Final production state from this session:
 - Stable tag: `stable-2026-05-05-ops-ui`
 - API Worker: `https://ops-api.matiasvalencas.workers.dev`
 - Latest verified Worker version from deploy: `7f5ef06b-1934-408d-afe0-91fcda65726a`
-- Pages deployment URL: `https://e00efc09.ops-web-siu.pages.dev`
-- Pages branch alias URL: `https://main.ops-web-siu.pages.dev`
+- Pages production deployment URL: `https://b45604a2.ops-web-siu.pages.dev`
+- Pages production URL: `https://ops-web-siu.pages.dev`
+- Note: the `ops-web` Pages project production branch is `claude/cloudflare-native-rebuild-B6rUL`; deploying to `main` creates a preview only for this project.
 - Production D1 migrations applied remotely through `0004_task_link.sql`.
 - `JWT_SECRET` is stored in Cloudflare as a Worker secret, not committed in `wrangler.toml`.
 - API CORS allows local dev plus `https://ops-web-siu.pages.dev`.
@@ -151,6 +152,7 @@ corepack pnpm deploy
 - Live health check passed: `https://ops-api.matiasvalencas.workers.dev/health`.
 - CORS was verified for origin `https://ops-web-siu.pages.dev`.
 - Production Pages bundle was verified to include `ops-api.matiasvalencas.workers.dev`.
+- Production Pages root was verified to serve `assets/index-Bq4zj_AM.js`.
 
 ## Preview Account Used Locally
 
