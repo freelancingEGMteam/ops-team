@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Share2, Trash2, UserPlus, X } from "lucide-react";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,7 +53,12 @@ export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
     enabled: open,
   });
 
-  const { data: members = [], isLoading } = useQuery({
+  const {
+    data: members = [],
+    error: membersError,
+    isError: membersIsError,
+    isLoading,
+  } = useQuery({
     queryKey: ["project-members", projectId],
     queryFn: () => api.projects.members(projectId),
     enabled: open,
@@ -94,6 +99,14 @@ export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
       ]);
     },
   });
+
+  function getShareErrorMessage(error: unknown) {
+    if (error instanceof ApiError && error.status === 404) {
+      return "Project sharing is not active on the API yet. Deploy the Worker API, then try again.";
+    }
+
+    return error instanceof Error ? error.message : "Could not share this project.";
+  }
 
   return (
     <>
@@ -158,7 +171,7 @@ export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
 
               {addMember.isError ? (
                 <p className="mt-2 text-sm text-destructive">
-                  {addMember.error instanceof Error ? addMember.error.message : "Could not add user."}
+                  {getShareErrorMessage(addMember.error)}
                 </p>
               ) : null}
 
@@ -168,6 +181,10 @@ export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
                 </div>
                 {isLoading ? (
                   <div className="px-4 py-6 text-sm text-muted-foreground">Loading members...</div>
+                ) : membersIsError ? (
+                  <div className="px-4 py-6 text-sm text-destructive">
+                    {getShareErrorMessage(membersError)}
+                  </div>
                 ) : (
                   <div className="divide-y">
                     {sortedMembers.map((member) => (
