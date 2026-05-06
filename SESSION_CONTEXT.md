@@ -249,6 +249,28 @@ Added on 2026-05-05:
 - `ops-team` Git-connected production auto-deployed from the push.
 - Production pages verified serving `assets/index-C5WKemmB.js`.
 
+## Project Sharing Update
+
+Added on 2026-05-06:
+
+- Project sharing uses the existing `project_members` table.
+- Owners and admins can open the project header `Share` button, add an existing registered user to the project as Member or Admin, and remove non-owner members.
+- Sharing the project makes it appear in the other user's Projects section and allows that user to open the same project and tasks after login.
+- New API endpoints:
+  - `GET /api/projects/:id/members`
+  - `POST /api/projects/:id/members`
+  - `DELETE /api/projects/:id/members/:userId`
+- Frontend files added/updated:
+  - `cf-app/web/src/components/projects/ProjectShareDialog.tsx`
+  - `cf-app/web/src/pages/ProjectDetail.tsx`
+  - `cf-app/web/src/lib/api.ts`
+  - `cf-app/web/src/types/index.ts`
+- Backend file updated:
+  - `cf-app/api/src/routes/projects.ts`
+- Validation run:
+  - `corepack pnpm typecheck` in `cf-app/api` passed.
+  - `corepack pnpm build` in `cf-app/web` passed.
+
 ## Preview Account Used Locally
 
 Local preview account:

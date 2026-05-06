@@ -7,6 +7,7 @@ import { TaskTable } from "@/components/tasks/TaskTable";
 import { TaskPipeline } from "@/components/tasks/TaskPipeline";
 import { TaskCalendar } from "@/components/tasks/TaskCalendar";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
+import { ProjectShareDialog } from "@/components/projects/ProjectShareDialog";
 import { Button } from "@/components/ui/button";
 import { STANDARD_STAGE_NAMES } from "@/lib/stages";
 import { type TaskRow } from "@/types";
@@ -70,34 +71,37 @@ export function ProjectDetailPage() {
             <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
             <h1 className="truncate text-lg font-bold sm:text-xl">{project.name}</h1>
           </div>
-          <div className="flex w-full items-center gap-1 overflow-x-auto rounded-lg border p-0.5 sm:w-auto">
-            <Button
-              variant={view === "table" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-8 shrink-0 sm:h-7"
-              onClick={() => setView("table")}
-            >
-              <List className="h-3.5 w-3.5" />
-              Table
-            </Button>
-            <Button
-              variant={view === "pipeline" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-8 shrink-0 sm:h-7"
-              onClick={() => setView("pipeline")}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              Pipeline
-            </Button>
-            <Button
-              variant={view === "calendar" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-8 shrink-0 sm:h-7"
-              onClick={() => setView("calendar")}
-            >
-              <CalendarDays className="h-3.5 w-3.5" />
-              Calendar
-            </Button>
+          <div className="flex w-full items-center gap-2 overflow-x-auto sm:w-auto">
+            <ProjectShareDialog projectId={id!} />
+            <div className="flex shrink-0 items-center gap-1 rounded-lg border p-0.5">
+              <Button
+                variant={view === "table" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 shrink-0 sm:h-7"
+                onClick={() => setView("table")}
+              >
+                <List className="h-3.5 w-3.5" />
+                Table
+              </Button>
+              <Button
+                variant={view === "pipeline" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 shrink-0 sm:h-7"
+                onClick={() => setView("pipeline")}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Pipeline
+              </Button>
+              <Button
+                variant={view === "calendar" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 shrink-0 sm:h-7"
+                onClick={() => setView("calendar")}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Calendar
+              </Button>
+            </div>
           </div>
         </div>
 

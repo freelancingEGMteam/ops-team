@@ -23,6 +23,14 @@ export interface Project {
   updatedAt: number;
 }
 
+export interface ProjectMember {
+  id: string;
+  projectId: string;
+  role: UserRole;
+  joinedAt: number;
+  user: Pick<User, "id" | "name" | "email" | "avatar">;
+}
+
 export interface Stage {
   id: string;
   name: string;

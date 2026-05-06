@@ -1,6 +1,7 @@
 import type {
   AuthResponse,
   Project,
+  ProjectMember,
   Stage,
   Task,
   TaskAttachment,
@@ -113,6 +114,19 @@ export const api = {
       }),
     delete: (id: string) =>
       request<{ success: boolean }>(`/api/projects/${id}`, { method: "DELETE" }),
+    members: (id: string) => request<ProjectMember[]>(`/api/projects/${id}/members`),
+    addMember: (
+      id: string,
+      data: { userId: string; role?: Extract<User["role"], "admin" | "member"> }
+    ) =>
+      request<{ success: boolean }>(`/api/projects/${id}/members`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    removeMember: (id: string, userId: string) =>
+      request<{ success: boolean }>(`/api/projects/${id}/members/${userId}`, {
+        method: "DELETE",
+      }),
   },
 
   stages: {
