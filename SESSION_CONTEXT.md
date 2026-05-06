@@ -229,6 +229,16 @@ Added on 2026-05-05:
 - `ops-web` production deployment: `https://69444bca.ops-web-siu.pages.dev`
 - Production pages verified serving `assets/index-B5pAl676.js`.
 
+## Delete Action Visibility Update
+
+Added on 2026-05-05:
+
+- Commit: `2d28481 fix: keep task delete action visible`
+- Task table delete icon is now visible at all times on mobile and desktop.
+- `ops-team` Git-connected production auto-deployed from the push.
+- Production pages verified serving `assets/index-BHY-TG96.js`.
+- Manual `ops-web` secondary deployment was skipped because the local Cloudflare CLI token expired.
+
 ## Preview Account Used Locally
 
 Local preview account:
