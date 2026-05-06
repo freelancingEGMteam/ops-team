@@ -383,7 +383,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
             e.stopPropagation();
             deleteTask.mutate(row.original.task.id);
           }}
-          className="rounded p-1 opacity-0 transition-opacity hover:text-destructive group-hover/row:opacity-100"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-destructive"
           title="Delete task"
         >
           <Trash2 className="h-3.5 w-3.5" />
