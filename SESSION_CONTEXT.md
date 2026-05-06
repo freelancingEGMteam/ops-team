@@ -239,6 +239,16 @@ Added on 2026-05-05:
 - Production pages verified serving `assets/index-BHY-TG96.js`.
 - Manual `ops-web` secondary deployment was skipped because the local Cloudflare CLI token expired.
 
+## Time Tracker Delete Action Update
+
+Added on 2026-05-05:
+
+- Commit: `687bfb0 fix: show time tracker delete action`
+- Time Tracker rows now have an always-visible delete icon.
+- Time Tracker table width was adjusted to keep the action column stable on mobile/tablet horizontal scroll.
+- `ops-team` Git-connected production auto-deployed from the push.
+- Production pages verified serving `assets/index-C5WKemmB.js`.
+
 ## Preview Account Used Locally
 
 Local preview account:
