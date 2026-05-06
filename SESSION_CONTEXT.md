@@ -278,6 +278,7 @@ Added on 2026-05-06:
 
 Added on 2026-05-06:
 
+- Commit: `47ccd0f feat: share time tracker entries`
 - Any current project member can add another registered user to that project as a Member. Owners/admins can still add Admins and remove non-owner members.
 - Time Tracker moved from browser-only React state to shared API/D1 storage so all logged-in users see the same entries.
 - Time Tracker rows include an `Added By` column to show who created each entry.
@@ -286,7 +287,8 @@ Added on 2026-05-06:
 - Validation run:
   - `corepack pnpm typecheck` in `cf-app/api` passed.
   - `corepack pnpm build` in `cf-app/web` passed.
-- Live production still requires Cloudflare API auth before applying the D1 migration and deploying the Worker.
+- `ops-team` Git-connected Pages production auto-deployed and was verified serving `assets/index-IQlr3pMT.js`.
+- Live production still requires Cloudflare API auth before applying the D1 migration and deploying the Worker. Both `wrangler d1 migrations apply ops-db --remote` and `wrangler deploy --minify` failed because `CLOUDFLARE_API_TOKEN` is missing/expired.
 
 ## Preview Account Used Locally
 
