@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Trash2 } from "lucide-react";
 
 type TimeStatus = "Pending" | "Done";
 type TimeEntry = {
@@ -67,6 +68,10 @@ export function TimeTrackerPage() {
     });
   }
 
+  function deleteEntry(id: string) {
+    setEntries((current) => current.filter((entry) => entry.id !== id));
+  }
+
   return (
     <div className="flex flex-col gap-4 md:gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -86,7 +91,7 @@ export function TimeTrackerPage() {
       </div>
 
       <div className="overflow-auto rounded-lg border bg-white">
-        <table className="min-w-[900px] text-sm">
+        <table className="min-w-[960px] text-sm">
           <thead className="bg-slate-100 text-xs uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-3 text-left">Start Date</th>
@@ -95,6 +100,7 @@ export function TimeTrackerPage() {
               <th className="px-4 py-3 text-left">Channel</th>
               <th className="px-4 py-3 text-left">Delivery Date</th>
               <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -145,6 +151,16 @@ export function TimeTrackerPage() {
                     value={entry.status}
                     onChange={(status) => updateEntry(entry.id, { status })}
                   />
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => deleteEntry(entry.id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-destructive"
+                    title="Delete entry"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -207,6 +223,7 @@ export function TimeTrackerPage() {
                   </button>
                 </div>
               </td>
+              <td className="px-4 py-3" />
             </tr>
           </tbody>
           <tfoot className="border-t bg-slate-50 font-semibold">
@@ -215,7 +232,7 @@ export function TimeTrackerPage() {
                 Week total
               </td>
               <td className="px-4 py-3 text-emerald-700">${total.toFixed(2)}</td>
-              <td colSpan={3} />
+              <td colSpan={4} />
             </tr>
           </tfoot>
         </table>
