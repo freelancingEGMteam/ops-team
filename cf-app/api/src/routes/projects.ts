@@ -157,7 +157,7 @@ router.post(
     const body = c.req.valid("json");
 
     const membership = await getMembership(db, projectId, userId);
-    if (!membership || !canManageMembers(membership.role)) {
+    if (!membership) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
@@ -169,22 +169,27 @@ router.post(
 
     if (!user) return c.json({ error: "User not found" }, 404);
 
+    const role = canManageMembers(membership.role) ? body.role : "member";
     const existing = await getMembership(db, projectId, body.userId);
     if (existing) {
       if (existing.role === "owner") {
         return c.json({ error: "Project owner role cannot be changed" }, 400);
       }
 
+      if (!canManageMembers(membership.role)) {
+        return c.json({ success: true });
+      }
+
       await db
         .update(projectMembers)
-        .set({ role: body.role })
+        .set({ role })
         .where(eq(projectMembers.id, existing.id));
     } else {
       await db.insert(projectMembers).values({
         id: nanoid(),
         projectId,
         userId: body.userId,
-        role: body.role,
+        role,
         joinedAt: new Date(),
       });
     }

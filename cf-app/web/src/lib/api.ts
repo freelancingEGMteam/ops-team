@@ -7,6 +7,9 @@ import type {
   TaskAttachment,
   TaskComment,
   TaskRow,
+  TimeEntry,
+  TimeEntryChannel,
+  TimeEntryStatus,
   User,
 } from "@/types";
 
@@ -61,6 +64,15 @@ type TaskUpdateInput = Partial<
   Omit<Task, "id" | "projectId" | "createdAt" | "updatedAt" | "dueDate">
 > & {
   dueDate?: string | null;
+};
+
+type TimeEntryInput = {
+  startDate?: string | null;
+  task?: string;
+  price?: number;
+  channel?: TimeEntryChannel | null;
+  deliveryDate?: string | null;
+  status?: TimeEntryStatus;
 };
 
 export class ApiError extends Error {
@@ -190,5 +202,21 @@ export const api = {
       data.append("file", file);
       return upload<TaskAttachment>(`/api/tasks/${taskId}/attachments`, data);
     },
+  },
+
+  timeEntries: {
+    list: () => request<TimeEntry[]>("/api/time-entries"),
+    create: (data: Required<Pick<TimeEntryInput, "task">> & TimeEntryInput) =>
+      request<TimeEntry>("/api/time-entries", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: TimeEntryInput) =>
+      request<TimeEntry>(`/api/time-entries/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<{ success: boolean }>(`/api/time-entries/${id}`, { method: "DELETE" }),
   },
 };

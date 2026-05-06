@@ -6,6 +6,7 @@ import authRouter from "./routes/auth";
 import projectsRouter from "./routes/projects";
 import stagesRouter from "./routes/stages";
 import tasksRouter from "./routes/tasks";
+import timeEntriesRouter from "./routes/time-entries";
 import usersRouter from "./routes/users";
 import type { Bindings, Variables } from "./types";
 
@@ -49,6 +50,7 @@ app.route("/api/auth", authRouter);
 app.route("/api/projects", projectsRouter);
 app.route("/api/stages", stagesRouter);
 app.route("/api/tasks", tasksRouter);
+app.route("/api/time-entries", timeEntriesRouter);
 app.route("/api/users", usersRouter);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));

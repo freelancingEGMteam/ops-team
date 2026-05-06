@@ -274,6 +274,20 @@ Added on 2026-05-06:
 - `ops-team` Git-connected Pages production auto-deployed and was verified serving `assets/index-C0ANUuJx.js`.
 - API Worker deploy is still required for the sharing endpoints to work live. Local Wrangler deploy failed because Cloudflare CLI auth is expired and needs `CLOUDFLARE_API_TOKEN`.
 
+## Shared Project And Time Tracker Update
+
+Added on 2026-05-06:
+
+- Any current project member can add another registered user to that project as a Member. Owners/admins can still add Admins and remove non-owner members.
+- Time Tracker moved from browser-only React state to shared API/D1 storage so all logged-in users see the same entries.
+- Time Tracker rows include an `Added By` column to show who created each entry.
+- New API route: `/api/time-entries`.
+- New D1 migration: `0006_time_entries.sql`.
+- Validation run:
+  - `corepack pnpm typecheck` in `cf-app/api` passed.
+  - `corepack pnpm build` in `cf-app/web` passed.
+- Live production still requires Cloudflare API auth before applying the D1 migration and deploying the Worker.
+
 ## Preview Account Used Locally
 
 Local preview account:

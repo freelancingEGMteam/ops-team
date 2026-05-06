@@ -131,6 +131,27 @@ export const taskAttachments = sqliteTable("task_attachments", {
     .default(sql`(unixepoch() * 1000)`),
 });
 
+export const timeEntries = sqliteTable("time_entries", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  startDate: integer("start_date", { mode: "timestamp_ms" }),
+  task: text("task").notNull(),
+  priceCents: integer("price_cents").notNull().default(0),
+  channel: text("channel", { enum: ["BIV", "EGM"] }),
+  deliveryDate: integer("delivery_date", { mode: "timestamp_ms" }),
+  status: text("status", { enum: ["Pending", "Done"] })
+    .notNull()
+    .default("Pending"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
+});
+
 export const passwordResetTokens = sqliteTable(
   "password_reset_tokens",
   {
@@ -158,4 +179,5 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
 export type TaskComment = typeof taskComments.$inferSelect;
 export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type TimeEntry = typeof timeEntries.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

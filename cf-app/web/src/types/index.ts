@@ -80,6 +80,23 @@ export interface TaskAttachment {
   uploader: Pick<User, "id" | "name" | "email" | "avatar">;
 }
 
+export type TimeEntryStatus = "Pending" | "Done";
+export type TimeEntryChannel = "BIV" | "EGM";
+
+export interface TimeEntry {
+  id: string;
+  userId: string | null;
+  startDate: number | null;
+  task: string;
+  price: number;
+  channel: TimeEntryChannel | null;
+  deliveryDate: number | null;
+  status: TimeEntryStatus;
+  createdAt: number;
+  updatedAt: number;
+  user: Pick<User, "id" | "name" | "email" | "avatar"> | null;
+}
+
 export interface AuthResponse {
   token: string;
   user: Pick<User, "id" | "name" | "email" | "avatar">;
