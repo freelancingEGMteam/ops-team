@@ -253,6 +253,7 @@ Added on 2026-05-05:
 
 Added on 2026-05-06:
 
+- Commit: `b2e4c33 feat: add project sharing`
 - Project sharing uses the existing `project_members` table.
 - Owners and admins can open the project header `Share` button, add an existing registered user to the project as Member or Admin, and remove non-owner members.
 - Sharing the project makes it appear in the other user's Projects section and allows that user to open the same project and tasks after login.
@@ -270,6 +271,8 @@ Added on 2026-05-06:
 - Validation run:
   - `corepack pnpm typecheck` in `cf-app/api` passed.
   - `corepack pnpm build` in `cf-app/web` passed.
+- `ops-team` Git-connected Pages production auto-deployed and was verified serving `assets/index-C0ANUuJx.js`.
+- API Worker deploy is still required for the sharing endpoints to work live. Local Wrangler deploy failed because Cloudflare CLI auth is expired and needs `CLOUDFLARE_API_TOKEN`.
 
 ## Preview Account Used Locally
 
