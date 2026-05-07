@@ -303,12 +303,19 @@ This account and seeded data are local development data only.
 
 Added on 2026-05-07:
 
+- Commit: `b4e53a0 fix: improve mobile navigation and cards`
 - Mobile task tables now render as editable task cards on small screens, with a stacked add-task form.
 - Mobile Time Tracker now renders editable time entry cards and a stacked add-entry form on small screens.
 - Project links were moved into the primary app navigation so a project such as `Youtube Channels` appears as its own menu tab instead of under a separate Projects section.
 - The navigation shell is sticky and high z-index so Dashboard, Time Tracker, Users, project tabs, and New Project remain clickable across mobile, tablet, and desktop, including while task panels are open.
 - Verified Time Tracker entries are shared/editable by all authenticated users: one local user created an entry and a second local user edited/deleted it successfully.
+- `ops-team` production deployment: `https://830720d4.ops-team.pages.dev`
+- `ops-web` production deployment: `https://a3b940cf.ops-web-siu.pages.dev`
+- Production roots verified serving `assets/index-DdjN2xO5.js`:
+  - `https://ops-team.pages.dev`
+  - `https://ops-web-siu.pages.dev`
 - Validation run:
   - `corepack pnpm build` in `cf-app/web` passed.
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+  - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`.
 - Data safety: this was a frontend-only deployment path. No production D1 migrations were applied and no production data was edited. The local test project `e945211ee27625cdfc850fa4141f184d` was renamed from `Mobile QA Project` to `Youtube Channels` only in localhost/local D1 for testing.
