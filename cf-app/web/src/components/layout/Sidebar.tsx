@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { NavLink, useNavigate, type To } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
@@ -25,7 +25,7 @@ export function Sidebar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, to: To) {
+  function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, to: string) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
     }
@@ -33,6 +33,15 @@ export function Sidebar() {
     event.preventDefault();
     event.stopPropagation();
     navigate(to);
+
+    const target = new URL(to, window.location.origin);
+    window.setTimeout(() => {
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const targetPath = `${target.pathname}${target.search}${target.hash}`;
+      if (currentPath !== targetPath) {
+        window.location.assign(target.href);
+      }
+    }, 100);
   }
 
   const { data: projects } = useQuery({

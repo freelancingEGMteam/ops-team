@@ -335,3 +335,12 @@ Follow-up on 2026-05-07:
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
   - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`.
 - Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.
+
+Dashboard navigation follow-up on 2026-05-07:
+
+- User reported the Dashboard menu link did not activate on the live project page.
+- Reproduced local click navigation successfully and verified the live deep project URL served the latest bundle, then added a browser navigation fallback: menu clicks still use React routing first, but if the URL does not change, the app performs a normal browser navigation to the target.
+- Validation run:
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+- Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.
