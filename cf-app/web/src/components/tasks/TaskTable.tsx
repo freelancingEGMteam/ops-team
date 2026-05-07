@@ -467,7 +467,263 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
         </Button>
       </div>
 
-      <div className="overflow-auto rounded-lg border">
+      <div className="space-y-3 sm:hidden">
+        {groupedRows.map((group) => (
+          <section key={group.key} className="rounded-lg border bg-white">
+            <div className="border-b bg-slate-100 px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+              {group.label}
+              <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                {group.rows.length}
+              </span>
+            </div>
+            <div className="divide-y">
+              {group.rows.map((row) => {
+                const task = row.original.task;
+                const stage = row.original.stage;
+                const assignee = row.original.assignee;
+                return (
+                  <article
+                    key={row.id}
+                    className="space-y-3 px-3 py-3"
+                    onClick={() => onRowClick?.(row.original)}
+                  >
+                    <div className="flex items-start gap-2">
+                      <GripVertical className="mt-2 h-4 w-4 shrink-0 text-slate-300" />
+                      <InlineTextCell
+                        value={task.name}
+                        onCommit={(name) => updateTask.mutate({ id: task.id, data: { name } })}
+                        className="min-w-0 flex-1 font-semibold"
+                      />
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteTask.mutate(task.id);
+                        }}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-destructive"
+                        title="Delete task"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <InlineSelectCell
+                        value={task.status}
+                        options={Object.entries(STATUS_CONFIG).map(([v, c]) => ({
+                          value: v as TaskStatus,
+                          label: c.label,
+                        }))}
+                        onCommit={(status) => updateTask.mutate({ id: task.id, data: { status } })}
+                        renderValue={(status) => (
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              STATUS_CONFIG[status].bg,
+                              STATUS_CONFIG[status].color
+                            )}
+                          >
+                            {STATUS_CONFIG[status].label}
+                          </span>
+                        )}
+                      />
+                      <InlineSelectCell
+                        value={task.priority}
+                        options={Object.entries(PRIORITY_CONFIG).map(([v, c]) => ({
+                          value: v as TaskPriority,
+                          label: c.label,
+                          className: c.color,
+                        }))}
+                        onCommit={(priority) =>
+                          updateTask.mutate({ id: task.id, data: { priority } })
+                        }
+                        renderValue={(priority) => (
+                          <span className={cn("text-xs font-medium", PRIORITY_CONFIG[priority].color)}>
+                            {PRIORITY_CONFIG[priority].label}
+                          </span>
+                        )}
+                      />
+                      <InlineSelectCell
+                        value={task.channel ?? "__none"}
+                        options={[{ value: "__none", label: "None" }, ...CHANNEL_OPTIONS]}
+                        onCommit={(channel) =>
+                          updateTask.mutate({
+                            id: task.id,
+                            data: { channel: channel === "__none" ? null : (channel as TaskChannel) },
+                          })
+                        }
+                        renderValue={(channel) =>
+                          channel === "__none" ? (
+                            <span className="text-muted-foreground text-xs">No Channel</span>
+                          ) : (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                              {channel}
+                            </span>
+                          )
+                        }
+                      />
+                      <InlineSelectCell
+                        value={stage?.id ?? "__none"}
+                        options={[
+                          { value: "__none", label: "None" },
+                          ...stages.map((s) => ({ value: s.id, label: <StageBadge name={s.name} /> })),
+                        ]}
+                        onCommit={(stageId) =>
+                          updateTask.mutate({
+                            id: task.id,
+                            data: { stageId: stageId === "__none" ? null : stageId },
+                          })
+                        }
+                        renderValue={(stageId) => {
+                          const selected =
+                            stageId === "__none" ? null : stages.find((s) => s.id === stageId) ?? stage;
+                          return selected ? (
+                            <StageBadge name={selected.name} />
+                          ) : (
+                            <span className="text-muted-foreground text-xs">No Stage</span>
+                          );
+                        }}
+                      />
+                      <InlineSelectCell
+                        value={assignee?.id ?? "__unassigned"}
+                        options={[
+                          { value: "__unassigned", label: "Unassigned" },
+                          ...assignableUsers.map((user) => ({ value: user.id, label: user.name })),
+                        ]}
+                        onCommit={(assigneeId) =>
+                          updateTask.mutate({
+                            id: task.id,
+                            data: { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
+                          })
+                        }
+                        renderValue={(userId) => {
+                          const selected =
+                            userId === "__unassigned"
+                              ? null
+                              : assignableUsers.find((user) => user.id === userId) ?? assignee;
+                          return selected ? (
+                            <span className="truncate text-xs">{selected.name}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Unassigned</span>
+                          );
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toDateInputValue(task.dueDate)}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          updateTask.mutate({
+                            id: task.id,
+                            data: { dueDate: fromDateInputValue(event.target.value) },
+                          })
+                        }
+                        className="h-8 rounded-md border bg-background px-2 text-xs"
+                      />
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <form
+        className="grid gap-2 rounded-lg border bg-white p-3 sm:hidden"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (newTask.name.trim()) createTask.mutate();
+        }}
+      >
+        <Input
+          placeholder="+ Add task..."
+          value={newTask.name}
+          onChange={(event) => setNewTask((task) => ({ ...task, name: event.target.value }))}
+          className="h-9"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={newTask.status}
+            onChange={(event) =>
+              setNewTask((task) => ({ ...task, status: event.target.value as TaskStatus }))
+            }
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+              <option key={value} value={value}>
+                {config.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={newTask.priority}
+            onChange={(event) =>
+              setNewTask((task) => ({ ...task, priority: event.target.value as TaskPriority }))
+            }
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            {Object.entries(PRIORITY_CONFIG).map(([value, config]) => (
+              <option key={value} value={value}>
+                {config.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={newTask.channel}
+            onChange={(event) => setNewTask((task) => ({ ...task, channel: event.target.value }))}
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            <option value="__none">None</option>
+            {CHANNEL_OPTIONS.map((channel) => (
+              <option key={channel.value} value={channel.value}>
+                {channel.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={newTask.stageId}
+            onChange={(event) => setNewTask((task) => ({ ...task, stageId: event.target.value }))}
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            <option value="__none">No Stage</option>
+            {stages.map((stage) => (
+              <option key={stage.id} value={stage.id}>
+                {stage.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={newTask.assigneeId}
+            onChange={(event) =>
+              setNewTask((task) => ({ ...task, assigneeId: event.target.value }))
+            }
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            <option value="__unassigned">Unassigned</option>
+            {assignableUsers.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={newTask.dueDate}
+            onChange={(event) => setNewTask((task) => ({ ...task, dueDate: event.target.value }))}
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          />
+        </div>
+        <Button
+          type="submit"
+          size="sm"
+          variant="outline"
+          disabled={!newTask.name.trim() || createTask.isPending}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add
+        </Button>
+      </form>
+
+      <div className="hidden overflow-auto rounded-lg border sm:block">
         <table className="min-w-[1120px] text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (
@@ -551,7 +807,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
       </div>
 
       <form
-        className="overflow-auto rounded-lg border bg-white"
+        className="hidden overflow-auto rounded-lg border bg-white sm:block"
         onSubmit={(e) => {
           e.preventDefault();
           if (newTask.name.trim()) createTask.mutate();

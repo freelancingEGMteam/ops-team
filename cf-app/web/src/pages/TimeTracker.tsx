@@ -142,7 +142,133 @@ export function TimeTrackerPage() {
         <Summary label="Completed" value={`${completed} / ${entries.length}`} />
       </div>
 
-      <div className="overflow-auto rounded-lg border bg-white">
+      <div className="space-y-3 sm:hidden">
+        {isLoading ? (
+          <div className="rounded-lg border bg-white px-4 py-8 text-center text-sm text-muted-foreground">
+            Loading shared time entries...
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="rounded-lg border bg-white px-4 py-8 text-center text-sm text-muted-foreground">
+            No time entries yet.
+          </div>
+        ) : (
+          entries.map((entry) => (
+            <article key={entry.id} className="space-y-3 rounded-lg border bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <input
+                  value={entry.task}
+                  onChange={(event) => updateEntry(entry.id, { task: event.target.value })}
+                  onBlur={(event) => saveEntry(entry.id, { task: event.target.value })}
+                  className="h-9 min-w-0 flex-1 rounded-md border px-2 font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => deleteMutation.mutate(entry.id)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-destructive"
+                  title="Delete entry"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={entry.startDate}
+                  onChange={(event) =>
+                    updateEntry(entry.id, { startDate: event.target.value }, true)
+                  }
+                  className="h-9 rounded-md border px-2 text-sm"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={entry.price}
+                  onChange={(event) => updateEntry(entry.id, { price: event.target.value })}
+                  onBlur={(event) => saveEntry(entry.id, { price: event.target.value })}
+                  className="h-9 rounded-md border px-2 text-sm font-semibold text-emerald-700"
+                />
+                <ChannelSelect
+                  value={entry.channel}
+                  onChange={(channel) => updateEntry(entry.id, { channel }, true)}
+                />
+                <StatusSelect
+                  value={entry.status}
+                  onChange={(status) => updateEntry(entry.id, { status }, true)}
+                />
+                <input
+                  type="date"
+                  value={entry.deliveryDate}
+                  onChange={(event) =>
+                    updateEntry(entry.id, { deliveryDate: event.target.value }, true)
+                  }
+                  className="h-9 rounded-md border px-2 text-sm"
+                />
+                <div className="flex h-9 items-center rounded-md border px-2 text-sm text-muted-foreground">
+                  {entry.userName}
+                </div>
+              </div>
+            </article>
+          ))
+        )}
+
+        <form
+          className="grid gap-2 rounded-lg border bg-white p-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            addEntry();
+          }}
+        >
+          <input
+            placeholder="Task name..."
+            value={draft.task}
+            onChange={(event) => setDraft((entry) => ({ ...entry, task: event.target.value }))}
+            className="h-9 rounded-md border px-2"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              value={draft.startDate}
+              onChange={(event) =>
+                setDraft((entry) => ({ ...entry, startDate: event.target.value }))
+              }
+              className="h-9 rounded-md border px-2 text-sm"
+            />
+            <input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={draft.price}
+              onChange={(event) => setDraft((entry) => ({ ...entry, price: event.target.value }))}
+              className="h-9 rounded-md border px-2 text-sm"
+            />
+            <ChannelSelect
+              value={draft.channel}
+              onChange={(channel) => setDraft((entry) => ({ ...entry, channel }))}
+            />
+            <StatusSelect
+              value={draft.status}
+              onChange={(status) => setDraft((entry) => ({ ...entry, status }))}
+            />
+            <input
+              type="date"
+              value={draft.deliveryDate}
+              onChange={(event) =>
+                setDraft((entry) => ({ ...entry, deliveryDate: event.target.value }))
+              }
+              className="h-9 rounded-md border px-2 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!draft.task.trim() || createMutation.isPending}
+              className="h-9 rounded-md border px-3 text-sm disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="hidden overflow-auto rounded-lg border bg-white sm:block">
         <table className="min-w-[1080px] text-sm">
           <thead className="bg-slate-100 text-xs uppercase tracking-wider text-slate-500">
             <tr>

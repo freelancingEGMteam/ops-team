@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Clock3,
+  FolderKanban,
   LogOut,
   Plus,
   Users,
@@ -29,14 +30,14 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-b bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
+    <aside className="sticky top-0 z-[120] flex w-full shrink-0 flex-col border-b bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
       {/* Logo */}
-      <div className="flex h-12 items-center px-3 font-bold text-primary md:h-14 md:px-4">
+      <div className="flex h-10 items-center px-3 font-bold text-primary sm:h-12 md:h-14 md:px-4">
         <span className="text-lg">⚡ Ops</span>
       </div>
 
       {/* Primary nav */}
-      <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:gap-0.5 md:py-2">
+      <nav className="pointer-events-auto flex gap-1 overflow-x-auto px-2 pb-1.5 md:flex-col md:gap-0.5 md:py-2">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -44,57 +45,44 @@ export function Sidebar() {
             end={to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "relative z-[121] flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )
             }
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {label}
           </NavLink>
         ))}
-      </nav>
-
-      {/* Projects section */}
-      <div className="border-t px-2 py-2 md:mt-4 md:border-t-0 md:py-0">
-        <div className="flex items-center justify-between px-3 py-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Projects
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => navigate("/projects/new")}
+        {projects?.slice(0, 8).map((p) => (
+          <NavLink
+            key={p.id}
+            to={`/projects/${p.id}`}
+            className={({ isActive }) =>
+              cn(
+                "relative z-[121] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:shrink",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              )
+            }
           >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-        <div className="mt-1 flex gap-1 overflow-x-auto md:flex-col md:gap-0.5 md:overflow-visible">
-          {projects?.slice(0, 8).map((p) => (
-            <NavLink
-              key={p.id}
-              to={`/projects/${p.id}`}
-              className={({ isActive }) =>
-                cn(
-                  "flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors md:shrink",
-                  isActive
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )
-              }
-            >
-              <span
-                className="h-2 w-2 rounded-full shrink-0"
-                style={{ backgroundColor: p.color }}
-              />
-              <span className="truncate">{p.name}</span>
-            </NavLink>
-          ))}
-        </div>
-      </div>
+            <FolderKanban className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+            <span className="truncate">{p.name}</span>
+          </NavLink>
+        ))}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative z-[121] h-7 w-7 shrink-0 md:h-8 md:w-8"
+          onClick={() => navigate("/projects/new")}
+          title="New project"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </nav>
 
       {/* Footer */}
       <div className="mt-auto hidden border-t p-3 md:block">
