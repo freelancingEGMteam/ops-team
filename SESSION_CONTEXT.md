@@ -323,8 +323,15 @@ Added on 2026-05-07:
 Follow-up on 2026-05-07:
 
 - Live testing found left menu clicks were not activating reliably on `https://ops-team.pages.dev/projects/32bdf31b3a8baec7270c46c6e44140b6`.
+- Commit: `03a1b55 fix: make app navigation reliably clickable`
 - The app shell was changed to isolate layers, keep the sidebar above all app content/overlays, and make nav clicks route explicitly through React instead of relying only on default anchor behavior.
+- `ops-team` production deployment: `https://35c97a87.ops-team.pages.dev`
+- `ops-web` production deployment: `https://10b59780.ops-web-siu.pages.dev`
+- Production roots verified serving `assets/index-DKdxiD3j.js`:
+  - `https://ops-team.pages.dev`
+  - `https://ops-web-siu.pages.dev`
 - Validation run:
   - `corepack pnpm build` in `cf-app/web` passed.
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+  - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`.
 - Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.
