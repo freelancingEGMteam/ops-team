@@ -138,7 +138,7 @@ export function TimeTrackerPage() {
     }
 
     if (error instanceof ApiError && error.status >= 500) {
-      return "The shared Time Tracker database is not ready yet. Apply the production migration, then try again.";
+      return error.message || "The Time Tracker could not save this entry. Please try again.";
     }
 
     return error instanceof Error ? error.message : "Could not add this time entry.";
