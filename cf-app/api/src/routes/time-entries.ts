@@ -36,7 +36,7 @@ function fromCents(priceCents: number) {
 
 function mapEntry(row: {
   entry: typeof timeEntries.$inferSelect;
-  user: Pick<typeof users.$inferSelect, "id" | "name" | "email" | "avatar"> | null;
+  user: Pick<typeof users.$inferSelect, "name" | "email" | "avatar"> | null;
 }) {
   return {
     id: row.entry.id,
@@ -49,7 +49,7 @@ function mapEntry(row: {
     status: row.entry.status,
     createdAt: row.entry.createdAt,
     updatedAt: row.entry.updatedAt,
-    user: row.user,
+    user: row.user ? { id: row.entry.userId, ...row.user } : null,
   };
 }
 
@@ -58,7 +58,6 @@ async function getEntry(db: ReturnType<typeof createDb>, id: string) {
     .select({
       entry: timeEntries,
       user: {
-        id: users.id,
         name: users.name,
         email: users.email,
         avatar: users.avatar,
@@ -70,14 +69,23 @@ async function getEntry(db: ReturnType<typeof createDb>, id: string) {
     .get();
 }
 
+// C-4: Filter entries by requesting user's ID; admin/owner can see all
 router.get("/", async (c) => {
   const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
+
+  const requestingUser = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId))
+    .get();
+
+  const isAdmin = requestingUser?.role === "admin" || requestingUser?.role === "owner";
 
   const rows = await db
     .select({
       entry: timeEntries,
       user: {
-        id: users.id,
         name: users.name,
         email: users.email,
         avatar: users.avatar,
@@ -85,6 +93,7 @@ router.get("/", async (c) => {
     })
     .from(timeEntries)
     .leftJoin(users, eq(users.id, timeEntries.userId))
+    .where(isAdmin ? undefined : eq(timeEntries.userId, userId))
     .orderBy(asc(timeEntries.startDate), asc(timeEntries.createdAt))
     .all();
 
@@ -117,11 +126,24 @@ router.post("/", zValidator("json", createTimeEntrySchema), async (c) => {
 
 router.patch("/:id", zValidator("json", updateTimeEntrySchema), async (c) => {
   const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
   const id = c.req.param("id");
   const body = c.req.valid("json");
 
   const existing = await getEntry(db, id);
   if (!existing) return c.json({ error: "Not found" }, 404);
+
+  // C-3: Only the owner (or admin/owner role) may modify an entry
+  const requestingUser = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId))
+    .get();
+  const isAdmin = requestingUser?.role === "admin" || requestingUser?.role === "owner";
+
+  if (!isAdmin && existing.entry.userId !== userId) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
 
   await db
     .update(timeEntries)
@@ -146,10 +168,23 @@ router.patch("/:id", zValidator("json", updateTimeEntrySchema), async (c) => {
 
 router.delete("/:id", async (c) => {
   const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
   const id = c.req.param("id");
 
   const existing = await getEntry(db, id);
   if (!existing) return c.json({ error: "Not found" }, 404);
+
+  // C-3: Only the owner (or admin/owner role) may delete an entry
+  const requestingUser = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId))
+    .get();
+  const isAdmin = requestingUser?.role === "admin" || requestingUser?.role === "owner";
+
+  if (!isAdmin && existing.entry.userId !== userId) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
 
   await db.delete(timeEntries).where(eq(timeEntries.id, id));
   return c.json({ success: true });
