@@ -319,3 +319,12 @@ Added on 2026-05-07:
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
   - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`.
 - Data safety: this was a frontend-only deployment path. No production D1 migrations were applied and no production data was edited. The local test project `e945211ee27625cdfc850fa4141f184d` was renamed from `Mobile QA Project` to `Youtube Channels` only in localhost/local D1 for testing.
+
+Follow-up on 2026-05-07:
+
+- Live testing found left menu clicks were not activating reliably on `https://ops-team.pages.dev/projects/32bdf31b3a8baec7270c46c6e44140b6`.
+- The app shell was changed to isolate layers, keep the sidebar above all app content/overlays, and make nav clicks route explicitly through React instead of relying only on default anchor behavior.
+- Validation run:
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+- Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.

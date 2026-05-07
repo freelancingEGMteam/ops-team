@@ -1,4 +1,5 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import type * as React from "react";
+import { NavLink, useNavigate, type To } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
@@ -24,13 +25,23 @@ export function Sidebar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
+  function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, to: To) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(to);
+  }
+
   const { data: projects } = useQuery({
     queryKey: ["projects"],
     queryFn: api.projects.list,
   });
 
   return (
-    <aside className="sticky top-0 z-[120] flex w-full shrink-0 flex-col border-b bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
+    <aside className="sticky top-0 z-[2000] flex w-full shrink-0 flex-col border-b bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
       {/* Logo */}
       <div className="flex h-10 items-center px-3 font-bold text-primary sm:h-12 md:h-14 md:px-4">
         <span className="text-lg">⚡ Ops</span>
@@ -43,9 +54,10 @@ export function Sidebar() {
             key={to}
             to={to}
             end={to === "/"}
+            onClick={(event) => handleNavClick(event, to)}
             className={({ isActive }) =>
               cn(
-                "relative z-[121] flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
+                "relative z-[2001] flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -60,9 +72,10 @@ export function Sidebar() {
           <NavLink
             key={p.id}
             to={`/projects/${p.id}`}
+            onClick={(event) => handleNavClick(event, `/projects/${p.id}`)}
             className={({ isActive }) =>
               cn(
-                "relative z-[121] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:shrink",
+                "relative z-[2001] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:shrink",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -76,7 +89,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative z-[121] h-7 w-7 shrink-0 md:h-8 md:w-8"
+          className="relative z-[2001] h-7 w-7 shrink-0 md:h-8 md:w-8"
           onClick={() => navigate("/projects/new")}
           title="New project"
         >
