@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { asc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { createDb } from "../db/client";
-import { timeEntries, timeTrackerMembers, users } from "../db/schema";
+import { timeTrackerMembers, users } from "../db/schema";
 import { authMiddleware } from "../middleware/auth";
 import { nanoid } from "../lib/jwt";
 import type { Bindings, Variables } from "../types";
@@ -77,39 +77,93 @@ function fromCents(priceCents: number) {
   return priceCents / 100;
 }
 
-function mapEntry(row: {
-  entry: typeof timeEntries.$inferSelect;
-  user: Pick<typeof users.$inferSelect, "name" | "email" | "avatar"> | null;
-}) {
+type TimeEntryRow = {
+  id: string;
+  user_id: string | null;
+  start_date: number | null;
+  task?: string;
+  task_name?: string;
+  price?: number;
+  price_cents?: number;
+  channel: "BIV" | "EGM" | null;
+  delivery_date: number | null;
+  status: "Pending" | "Done" | "pending" | "done";
+  created_at: number;
+  updated_at: number;
+  user_name: string | null;
+  user_email: string | null;
+  user_avatar: string | null;
+};
+
+type TimeEntryShape = {
+  usesTaskName: boolean;
+  usesPriceCents: boolean;
+  hasWeekStart: boolean;
+};
+
+function mapStatus(status: TimeEntryRow["status"]) {
+  return status.toLowerCase() === "done" ? "Done" : "Pending";
+}
+
+function storageStatus(status: "Pending" | "Done", shape: TimeEntryShape) {
+  return shape.usesTaskName ? status.toLowerCase() : status;
+}
+
+function getWeekStart(value: string | null | undefined) {
+  const date = value ? new Date(value) : new Date();
+  const day = date.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  monday.setUTCDate(monday.getUTCDate() + diff);
+  return monday.getTime();
+}
+
+async function getTimeEntryShape(db: D1Database): Promise<TimeEntryShape> {
+  const columns = await db.prepare("PRAGMA table_info(time_entries)").all<{ name: string }>();
+  const names = new Set((columns.results ?? []).map((column) => column.name));
   return {
-    id: row.entry.id,
-    userId: row.entry.userId,
-    startDate: row.entry.startDate,
-    task: row.entry.task,
-    price: fromCents(row.entry.priceCents),
-    channel: row.entry.channel,
-    deliveryDate: row.entry.deliveryDate,
-    status: row.entry.status,
-    createdAt: row.entry.createdAt,
-    updatedAt: row.entry.updatedAt,
-    user: row.user ? { id: row.entry.userId, ...row.user } : null,
+    usesTaskName: names.has("task_name"),
+    usesPriceCents: names.has("price_cents"),
+    hasWeekStart: names.has("week_start"),
   };
 }
 
-async function getEntry(db: Db, id: string) {
+function mapEntry(row: TimeEntryRow) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    startDate: row.start_date,
+    task: row.task_name ?? row.task ?? "",
+    price:
+      row.price_cents === undefined
+        ? Number(row.price ?? 0)
+        : fromCents(Number(row.price_cents ?? 0)),
+    channel: row.channel,
+    deliveryDate: row.delivery_date,
+    status: mapStatus(row.status),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    user: row.user_id
+      ? {
+          id: row.user_id,
+          name: row.user_name ?? "",
+          email: row.user_email ?? "",
+          avatar: row.user_avatar,
+        }
+      : null,
+  };
+}
+
+async function getEntry(db: D1Database, id: string) {
   return db
-    .select({
-      entry: timeEntries,
-      user: {
-        name: users.name,
-        email: users.email,
-        avatar: users.avatar,
-      },
-    })
-    .from(timeEntries)
-    .leftJoin(users, eq(users.id, timeEntries.userId))
-    .where(eq(timeEntries.id, id))
-    .get();
+    .prepare(
+      `SELECT te.*, u.name AS user_name, u.email AS user_email, u.avatar AS user_avatar
+       FROM time_entries te
+       LEFT JOIN users u ON u.id = te.user_id
+       WHERE te.id = ?`
+    )
+    .bind(id)
+    .first<TimeEntryRow>();
 }
 
 router.get("/", async (c) => {
@@ -117,21 +171,16 @@ router.get("/", async (c) => {
   const access = await getTimeTrackerAccess(db, c.get("user").sub);
   if (!access) return c.json({ error: "Forbidden" }, 403);
 
-  const rows = await db
-    .select({
-      entry: timeEntries,
-      user: {
-        name: users.name,
-        email: users.email,
-        avatar: users.avatar,
-      },
-    })
-    .from(timeEntries)
-    .leftJoin(users, eq(users.id, timeEntries.userId))
-    .orderBy(asc(timeEntries.startDate), asc(timeEntries.createdAt))
-    .all();
+  const rows = await c.env.DB
+    .prepare(
+      `SELECT te.*, u.name AS user_name, u.email AS user_email, u.avatar AS user_avatar
+       FROM time_entries te
+       LEFT JOIN users u ON u.id = te.user_id
+       ORDER BY te.start_date ASC, te.created_at ASC`
+    )
+    .all<TimeEntryRow>();
 
-  return c.json(rows.map(mapEntry));
+  return c.json((rows.results ?? []).map(mapEntry));
 });
 
 router.get("/members", async (c) => {
@@ -216,21 +265,56 @@ router.post("/", zValidator("json", createTimeEntrySchema), async (c) => {
   const body = c.req.valid("json");
   const now = new Date();
   const id = nanoid();
+  const shape = await getTimeEntryShape(c.env.DB);
+  const startDate = body.startDate ? new Date(body.startDate).getTime() : null;
+  const deliveryDate = body.deliveryDate ? new Date(body.deliveryDate).getTime() : null;
+  const status = body.status ?? "Pending";
+  const price = body.price ?? 0;
 
-  await db.insert(timeEntries).values({
-    id,
-    userId,
-    startDate: body.startDate ? new Date(body.startDate) : null,
-    task: body.task,
-    priceCents: toCents(body.price),
-    channel: body.channel,
-    deliveryDate: body.deliveryDate ? new Date(body.deliveryDate) : null,
-    status: body.status ?? "Pending",
-    createdAt: now,
-    updatedAt: now,
-  });
+  if (shape.usesTaskName) {
+    await c.env.DB
+      .prepare(
+        `INSERT INTO time_entries (
+          id, user_id, task_name, start_date, delivery_date, price, channel, status, week_start, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        id,
+        userId,
+        body.task,
+        startDate,
+        deliveryDate,
+        price,
+        body.channel,
+        storageStatus(status, shape),
+        getWeekStart(body.startDate),
+        now.getTime(),
+        now.getTime()
+      )
+      .run();
+  } else {
+    await c.env.DB
+      .prepare(
+        `INSERT INTO time_entries (
+          id, user_id, start_date, task, price_cents, channel, delivery_date, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        id,
+        userId,
+        startDate,
+        body.task,
+        toCents(price),
+        body.channel,
+        deliveryDate,
+        storageStatus(status, shape),
+        now.getTime(),
+        now.getTime()
+      )
+      .run();
+  }
 
-  const entry = await getEntry(db, id);
+  const entry = await getEntry(c.env.DB, id);
   return c.json(entry ? mapEntry(entry) : null, 201);
 });
 
@@ -311,27 +395,51 @@ router.patch("/:id", zValidator("json", updateTimeEntrySchema), async (c) => {
   const id = c.req.param("id");
   const body = c.req.valid("json");
 
-  const existing = await getEntry(db, id);
+  const existing = await getEntry(c.env.DB, id);
   if (!existing) return c.json({ error: "Not found" }, 404);
 
-  await db
-    .update(timeEntries)
-    .set({
-      ...(body.startDate !== undefined
-        ? { startDate: body.startDate ? new Date(body.startDate) : null }
-        : {}),
-      ...(body.task !== undefined ? { task: body.task } : {}),
-      ...(body.price !== undefined ? { priceCents: toCents(body.price) } : {}),
-      ...(body.channel !== undefined ? { channel: body.channel } : {}),
-      ...(body.deliveryDate !== undefined
-        ? { deliveryDate: body.deliveryDate ? new Date(body.deliveryDate) : null }
-        : {}),
-      ...(body.status !== undefined ? { status: body.status } : {}),
-      updatedAt: new Date(),
-    })
-    .where(eq(timeEntries.id, id));
+  const shape = await getTimeEntryShape(c.env.DB);
+  const updates: string[] = [];
+  const values: unknown[] = [];
 
-  const updated = await getEntry(db, id);
+  if (body.startDate !== undefined) {
+    updates.push("start_date = ?");
+    values.push(body.startDate ? new Date(body.startDate).getTime() : null);
+    if (shape.hasWeekStart) {
+      updates.push("week_start = ?");
+      values.push(getWeekStart(body.startDate));
+    }
+  }
+  if (body.task !== undefined) {
+    updates.push(`${shape.usesTaskName ? "task_name" : "task"} = ?`);
+    values.push(body.task);
+  }
+  if (body.price !== undefined) {
+    updates.push(`${shape.usesPriceCents ? "price_cents" : "price"} = ?`);
+    values.push(shape.usesPriceCents ? toCents(body.price) : body.price);
+  }
+  if (body.channel !== undefined) {
+    updates.push("channel = ?");
+    values.push(body.channel);
+  }
+  if (body.deliveryDate !== undefined) {
+    updates.push("delivery_date = ?");
+    values.push(body.deliveryDate ? new Date(body.deliveryDate).getTime() : null);
+  }
+  if (body.status !== undefined) {
+    updates.push("status = ?");
+    values.push(storageStatus(body.status, shape));
+  }
+
+  updates.push("updated_at = ?");
+  values.push(Date.now(), id);
+
+  await c.env.DB
+    .prepare(`UPDATE time_entries SET ${updates.join(", ")} WHERE id = ?`)
+    .bind(...values)
+    .run();
+
+  const updated = await getEntry(c.env.DB, id);
   return c.json(updated ? mapEntry(updated) : null);
 });
 
@@ -342,10 +450,10 @@ router.delete("/:id", async (c) => {
 
   const id = c.req.param("id");
 
-  const existing = await getEntry(db, id);
+  const existing = await getEntry(c.env.DB, id);
   if (!existing) return c.json({ error: "Not found" }, 404);
 
-  await db.delete(timeEntries).where(eq(timeEntries.id, id));
+  await c.env.DB.prepare("DELETE FROM time_entries WHERE id = ?").bind(id).run();
   return c.json({ success: true });
 });
 
