@@ -1,7 +1,8 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { Check, Copy, Share2, Trash2, X } from "lucide-react";
+import { ApiError, api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 import type { TimeEntry, TimeEntryChannel, TimeEntryStatus } from "@/types";
 
 type EditableEntry = {
@@ -52,6 +53,9 @@ export function TimeTrackerPage() {
   const queryClient = useQueryClient();
   const [entries, setEntries] = React.useState<EditableEntry[]>([]);
   const [draft, setDraft] = React.useState<DraftEntry>(emptyDraft);
+  const [shareOpen, setShareOpen] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [copyError, setCopyError] = React.useState("");
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["time-entries"],
@@ -91,7 +95,13 @@ export function TimeTrackerPage() {
         deliveryDate: dateToIso(draft.deliveryDate),
         status: draft.status,
       }),
-    onSuccess: async () => {
+    onSuccess: async (entry) => {
+      if (entry) {
+        setEntries((current) => {
+          const next = mapEntry(entry);
+          return current.some((item) => item.id === next.id) ? current : [...current, next];
+        });
+      }
       setDraft(emptyDraft);
       await queryClient.invalidateQueries({ queryKey: ["time-entries"] });
     },
@@ -124,15 +134,53 @@ export function TimeTrackerPage() {
     createMutation.mutate();
   }
 
+  async function copyShareLink() {
+    const href = window.location.href;
+    try {
+      await navigator.clipboard.writeText(href);
+      setCopyError("");
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+      setCopyError("Copy failed. Select the link and copy it manually.");
+    }
+  }
+
+  function getCreateErrorMessage() {
+    const error = createMutation.error;
+    if (error instanceof ApiError && error.status === 404) {
+      return "Time Tracker sharing is not active on the API yet. Deploy the Worker API, then try again.";
+    }
+
+    if (error instanceof ApiError && error.status >= 500) {
+      return "The shared Time Tracker database is not ready yet. Apply the production migration, then try again.";
+    }
+
+    return error instanceof Error ? error.message : "Could not add this time entry.";
+  }
+
   return (
     <div className="flex flex-col gap-4 md:gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-lg font-bold sm:text-xl">Time Tracker</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-lg font-bold sm:text-xl">Time Tracker</h1>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 shrink-0 sm:h-7"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Share View
+          </Button>
+        </div>
         <div className="flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold sm:w-auto sm:gap-4 sm:px-4">
-          <button className="px-2 text-muted-foreground">{"<"}</button>
+          <button type="button" className="px-2 text-muted-foreground">{"<"}</button>
           <span>Shared entries</span>
-          <button className="px-2 text-muted-foreground">{">"}</button>
-          <button className="rounded-md border px-3 py-1 text-xs">All time</button>
+          <button type="button" className="px-2 text-muted-foreground">{">"}</button>
+          <button type="button" className="rounded-md border px-3 py-1 text-xs">All time</button>
         </div>
       </div>
 
@@ -224,6 +272,9 @@ export function TimeTrackerPage() {
             onChange={(event) => setDraft((entry) => ({ ...entry, task: event.target.value }))}
             className="h-9 rounded-md border px-2"
           />
+          {createMutation.isError ? (
+            <p className="text-sm text-destructive">{getCreateErrorMessage()}</p>
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <input
               type="date"
@@ -429,6 +480,13 @@ export function TimeTrackerPage() {
                 </button>
               </td>
             </tr>
+            {createMutation.isError ? (
+              <tr className="border-t bg-red-50">
+                <td colSpan={8} className="px-4 py-3 text-sm text-destructive">
+                  {getCreateErrorMessage()}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
           <tfoot className="border-t bg-slate-50 font-semibold">
             <tr>
@@ -441,6 +499,38 @@ export function TimeTrackerPage() {
           </tfoot>
         </table>
       </div>
+
+      {shareOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-end bg-black/40 sm:items-center sm:justify-center">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="Close share view dialog"
+            onClick={() => setShareOpen(false)}
+          />
+          <div className="relative z-[81] flex w-full max-w-lg flex-col rounded-t-xl border bg-background shadow-xl sm:rounded-xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold">Share Time Tracker</h2>
+                <p className="text-sm text-muted-foreground">Copy the shared view link.</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShareOpen(false)} aria-label="Close">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid gap-3 px-5 py-4">
+              <div className="rounded-md border bg-white px-3 py-2 text-sm text-muted-foreground">
+                {window.location.href}
+              </div>
+              <Button type="button" onClick={copyShareLink}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied" : "Copy Link"}
+              </Button>
+              {copyError ? <p className="text-sm text-destructive">{copyError}</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
