@@ -417,3 +417,28 @@ Added on 2026-05-07:
   - `claude/task-layout-styling-e6GtU`
 - Updated local Ops Team skill instructions to use `main` only for repo pushes and Pages deploy branch labels.
 - Going forward, all changes must be committed and pushed to `main`; do not create, push, or deploy `claude/...` branches.
+
+## Time Tracker Live Schema Fix
+
+Added on 2026-05-07:
+
+- Commit: `507061b fix: support live time tracker schema`
+- Commit: `4b38087 fix: clarify time tracker add errors`
+- Root cause: production D1 already had a `time_entries` table with an older schema:
+  - `task_name` instead of `task`
+  - `price` instead of `price_cents`
+  - required `week_start`
+  - lowercase stored statuses such as `done`
+- The Worker was trying to insert the newer local schema shape, causing 500 responses and the frontend message about applying the production migration.
+- The Time Tracker API now detects the live table shape and supports both the older production schema and the newer local schema without rebuilding or deleting data.
+- The frontend no longer shows the stale "Apply the production migration" message for generic 500 errors.
+- API Worker version after deploy: `7850afec-1710-4477-9adb-1e2de78de6f3`
+- `ops-team` production deployment: `https://af1a4bf3.ops-team.pages.dev`
+- Production root verified serving `assets/index-BYEfU-Db.js`.
+- Validation run:
+  - `corepack pnpm typecheck` in `cf-app/api` passed.
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local Time Tracker add/delete smoke test passed.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+  - Live API health check passed.
+- Data safety: no production data was edited. Remote D1 inspection was read-only and confirmed the existing `time_entries` count stayed at 2 during diagnosis.
