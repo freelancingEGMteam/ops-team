@@ -1,5 +1,4 @@
-import type * as React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
@@ -23,26 +22,6 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-
-  function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, to: string) {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(to);
-
-    const target = new URL(to, window.location.origin);
-    window.setTimeout(() => {
-      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      const targetPath = `${target.pathname}${target.search}${target.hash}`;
-      if (currentPath !== targetPath) {
-        window.location.assign(target.href);
-      }
-    }, 100);
-  }
 
   const { data: projects } = useQuery({
     queryKey: ["projects"],
@@ -63,7 +42,7 @@ export function Sidebar() {
             key={to}
             to={to}
             end={to === "/"}
-            onClick={(event) => handleNavClick(event, to)}
+            reloadDocument
             className={({ isActive }) =>
               cn(
                 "relative z-[2001] flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
@@ -81,7 +60,7 @@ export function Sidebar() {
           <NavLink
             key={p.id}
             to={`/projects/${p.id}`}
-            onClick={(event) => handleNavClick(event, `/projects/${p.id}`)}
+            reloadDocument
             className={({ isActive }) =>
               cn(
                 "relative z-[2001] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:shrink",
@@ -99,7 +78,7 @@ export function Sidebar() {
           variant="ghost"
           size="icon"
           className="relative z-[2001] h-7 w-7 shrink-0 md:h-8 md:w-8"
-          onClick={() => navigate("/projects/new")}
+          onClick={() => window.location.assign("/projects/new")}
           title="New project"
         >
           <Plus className="h-3.5 w-3.5" />

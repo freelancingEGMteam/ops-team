@@ -344,3 +344,14 @@ Dashboard navigation follow-up on 2026-05-07:
   - `corepack pnpm build` in `cf-app/web` passed.
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
 - Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.
+
+Native menu navigation follow-up on 2026-05-07:
+
+- User reported that the left menu was still not working reliably after the custom click fallback.
+- Removed custom menu click interception and changed menu links to real document navigations via React Router `reloadDocument`, with New Project using direct browser navigation.
+- Rationale: native browser navigation is more reliable for this app shell than custom `preventDefault` routing while debugging live click interception.
+- Validation run:
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+  - In-app browser manually navigated from Users to Time Tracker through the visible menu.
+- Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.
