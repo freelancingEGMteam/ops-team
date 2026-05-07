@@ -375,3 +375,34 @@ Added on 2026-05-07:
   - `https://ops-web-siu.pages.dev`
 - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`
 - Data safety: frontend-only update. No API deploy, no D1 migration, and no production data edits.
+
+## Time Tracker Member Sharing Update
+
+Added on 2026-05-07:
+
+- Commit: `d5ed566 feat: share time tracker with users`
+- Replaced the Time Tracker copy-link share modal with a member-management modal matching Project sharing:
+  - Select an existing user.
+  - Choose Member or Admin.
+  - Add them to the Time Tracker view.
+  - See Current Members and remove removable members.
+- Added API routes under `/api/time-entries/members` and a new D1 table `time_tracker_members`.
+- Access model:
+  - Existing Time Tracker remains usable when the share table is empty.
+  - The first user who opens sharing can bootstrap the share list.
+  - After members are added, users must be a Time Tracker member or workspace owner/admin to access the shared Time Tracker data.
+  - Shared Time Tracker members can see and edit the same shared entries.
+- Migration applied remotely: `0007_time_tracker_members.sql`
+- API Worker version after deploy: `a9254b5d-f678-4003-aef8-c7af7d23d19a`
+- `ops-team` production deployment: `https://32342c69.ops-team.pages.dev`
+- `ops-web` production deployment: `https://f1e83c44.ops-web-siu.pages.dev`
+- Production roots verified serving `assets/index-_ztUHnb3.js`:
+  - `https://ops-team.pages.dev`
+  - `https://ops-web-siu.pages.dev`
+- Validation run:
+  - `corepack pnpm typecheck` in `cf-app/api` passed.
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local Time Tracker share dialog smoke test passed.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+  - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`
+- Data safety: additive migration only. Production task/time-entry/user/project data was not edited. Remote verification showed `time_tracker_members` exists with `member_count = 0` immediately after deploy.
