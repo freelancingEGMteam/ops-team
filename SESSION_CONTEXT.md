@@ -122,7 +122,7 @@ Final production state from this session:
 - Latest verified Worker version from deploy: `7f5ef06b-1934-408d-afe0-91fcda65726a`
 - Pages production deployment URL: `https://b45604a2.ops-web-siu.pages.dev`
 - Pages production URL: `https://ops-web-siu.pages.dev`
-- Note: the `ops-web` Pages project production branch is `claude/cloudflare-native-rebuild-B6rUL`; deploying to `main` creates a preview only for this project.
+- Historical note: `ops-web` previously used `claude/cloudflare-native-rebuild-B6rUL`, but all non-main remote branches were later deleted. Use `main` only for repository pushes and Pages deploy branch labels.
 - Production D1 migrations applied remotely through `0004_task_link.sql`.
 - `JWT_SECRET` is stored in Cloudflare as a Worker secret, not committed in `wrangler.toml`.
 - API CORS allows local dev plus `https://ops-web-siu.pages.dev`.
@@ -406,3 +406,14 @@ Added on 2026-05-07:
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
   - Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`
 - Data safety: additive migration only. Production task/time-entry/user/project data was not edited. Remote verification showed `time_tracker_members` exists with `member_count = 0` immediately after deploy.
+
+## Branch Cleanup
+
+Added on 2026-05-07:
+
+- Deleted all remote non-main branches from GitHub:
+  - `claude/cloudflare-native-rebuild-B6rUL`
+  - `claude/setup-workers-api-6MZIx`
+  - `claude/task-layout-styling-e6GtU`
+- Updated local Ops Team skill instructions to use `main` only for repo pushes and Pages deploy branch labels.
+- Going forward, all changes must be committed and pushed to `main`; do not create, push, or deploy `claude/...` branches.
