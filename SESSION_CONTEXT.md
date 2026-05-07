@@ -355,3 +355,23 @@ Native menu navigation follow-up on 2026-05-07:
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
   - In-app browser manually navigated from Users to Time Tracker through the visible menu.
 - Data safety: frontend-only hotfix. No API deploy, no D1 migration, and no production data edits.
+
+## Time Tracker Share View And Add Feedback Update
+
+Added on 2026-05-07:
+
+- Commit: `257e56e fix: improve time tracker sharing and adds`
+- Added a Time Tracker `Share View` button matching the project-page share control style. It opens a small modal with the current Time Tracker URL and a copy-link action.
+- Improved Time Tracker add-entry behavior so successful creates are appended to the visible list immediately before the query refresh completes.
+- Added visible add-entry error messages for API route/migration problems and generic create failures, so the add button no longer appears to silently fail.
+- Local validation run:
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Playwright smoke test passed for opening Share View, adding a Time Tracker entry, seeing it appear immediately, and deleting the smoke entry.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+- `ops-team` production deployment: `https://d96d84a0.ops-team.pages.dev`
+- `ops-web` production deployment: `https://5e1c93b4.ops-web-siu.pages.dev`
+- Production roots verified serving `assets/index-Btv1HtMS.js`:
+  - `https://ops-team.pages.dev`
+  - `https://ops-web-siu.pages.dev`
+- Live API health check passed: `https://ops-api.matiasvalencas.workers.dev/health`
+- Data safety: frontend-only update. No API deploy, no D1 migration, and no production data edits.
