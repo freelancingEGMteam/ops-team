@@ -127,8 +127,14 @@ export function TimeTrackerPage() {
   }
 
   function addEntry() {
-    if (!draft.task.trim()) return;
+    if (!draft.task.trim() || createMutation.isPending) return;
     createMutation.mutate();
+  }
+
+  function addEntryFromKeyDown(event: React.KeyboardEvent) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addEntry();
   }
 
   function getCreateErrorMessage() {
@@ -388,7 +394,7 @@ export function TimeTrackerPage() {
                 </tr>
               ))
             )}
-            <tr className="border-t bg-slate-50">
+            <tr className="border-t bg-slate-50" onKeyDown={addEntryFromKeyDown}>
               <td className="px-4 py-3">
                 <input
                   type="date"
