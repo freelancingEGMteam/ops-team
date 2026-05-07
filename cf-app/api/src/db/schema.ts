@@ -152,6 +152,23 @@ export const timeEntries = sqliteTable("time_entries", {
     .default(sql`(unixepoch() * 1000)`),
 });
 
+export const timeTrackerMembers = sqliteTable(
+  "time_tracker_members",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["admin", "member"] })
+      .notNull()
+      .default("member"),
+    joinedAt: integer("joined_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => [uniqueIndex("time_tracker_members_user_idx").on(t.userId)]
+);
+
 export const passwordResetTokens = sqliteTable(
   "password_reset_tokens",
   {
@@ -180,4 +197,5 @@ export type InsertTask = typeof tasks.$inferInsert;
 export type TaskComment = typeof taskComments.$inferSelect;
 export type TaskAttachment = typeof taskAttachments.$inferSelect;
 export type TimeEntry = typeof timeEntries.$inferSelect;
+export type TimeTrackerMember = typeof timeTrackerMembers.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

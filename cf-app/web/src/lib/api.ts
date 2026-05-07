@@ -10,6 +10,7 @@ import type {
   TimeEntry,
   TimeEntryChannel,
   TimeEntryStatus,
+  TimeTrackerMember,
   User,
 } from "@/types";
 
@@ -218,5 +219,17 @@ export const api = {
       }),
     delete: (id: string) =>
       request<{ success: boolean }>(`/api/time-entries/${id}`, { method: "DELETE" }),
+    members: () => request<TimeTrackerMember[]>("/api/time-entries/members"),
+    addMember: (
+      data: { userId: string; role?: Extract<User["role"], "admin" | "member"> }
+    ) =>
+      request<{ success: boolean }>("/api/time-entries/members", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    removeMember: (userId: string) =>
+      request<{ success: boolean }>(`/api/time-entries/members/${userId}`, {
+        method: "DELETE",
+      }),
   },
 };

@@ -31,6 +31,13 @@ export interface ProjectMember {
   user: Pick<User, "id" | "name" | "email" | "avatar">;
 }
 
+export interface TimeTrackerMember {
+  id: string;
+  role: UserRole;
+  joinedAt: number;
+  user: Pick<User, "id" | "name" | "email" | "avatar">;
+}
+
 export interface Stage {
   id: string;
   name: string;
