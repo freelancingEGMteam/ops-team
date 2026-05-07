@@ -442,3 +442,19 @@ Added on 2026-05-07:
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
   - Live API health check passed.
 - Data safety: no production data was edited. Remote D1 inspection was read-only and confirmed the existing `time_entries` count stayed at 2 during diagnosis.
+
+## Stable Time Tracker Enter-To-Add Update
+
+Added on 2026-05-07:
+
+- Commit: `f2d2dda fix: add time entry on enter`
+- Time Tracker desktop add row now submits when the user presses Enter in the add-entry row, matching the existing Add button behavior.
+- Added a pending guard so repeated Enter presses cannot double-submit while a create request is in flight.
+- `ops-team` production deployment: `https://77ada8e0.ops-team.pages.dev`
+- Production root verified serving `assets/index-CFQ7dPCw.js`.
+- Validation run:
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local browser smoke test passed for adding a Time Tracker entry with Enter and deleting the smoke entry.
+  - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
+  - Live API health check passed.
+- Stable version marker: this is the most stable Ops UI version as of this update.
