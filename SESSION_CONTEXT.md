@@ -458,3 +458,28 @@ Added on 2026-05-07:
   - Local Playwright nav clickability smoke test passed on mobile, tablet, and desktop.
   - Live API health check passed.
 - Stable version marker: this is the most stable Ops UI version as of this update.
+
+## Task Detail Save Confirmation Update
+
+Added on 2026-05-10:
+
+- Commit: `a273834 fix: confirm task detail saves`
+- Added a global bottom-right toast system.
+- Task detail panel now shows confirmed messages only after successful API responses:
+  - `Description saved`
+  - `Google Drive link saved`
+  - `Comment posted`
+  - `Attachment complete`
+  - field-specific saves such as `Status saved`, `Due date saved`, and `Task name saved`
+- Task table creation/deletion now shows `Task added` and `Task deleted`.
+- Description and Google Drive link now have explicit Save buttons and still save on blur.
+- Closing the task detail panel flushes dirty description/link edits before closing.
+- The selected task detail panel now syncs with refreshed task query data so saved values do not appear to revert from stale props.
+- `ops-team` production deployment: `https://201b88fd.ops-team.pages.dev`
+- Production root verified serving `assets/index-C_5m0Hhg.js`.
+- Validation run:
+  - `corepack pnpm build` in `cf-app/web` passed.
+  - Local browser smoke test passed for description save toast and persistence after reload.
+  - Local browser smoke test passed for task add/delete toast and Dashboard nav click.
+  - Live API health check passed.
+- Data safety: frontend-only update. No API deploy, no D1 migration, and no production data edits.
