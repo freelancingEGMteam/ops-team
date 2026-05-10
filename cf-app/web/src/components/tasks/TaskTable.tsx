@@ -27,6 +27,7 @@ import { InlineSelectCell, InlineTextCell } from "./TaskInlineEdit";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 
 interface TaskTableProps {
   projectId: string;
@@ -72,6 +73,7 @@ function StageBadge({ name }: { name: string }) {
 
 export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProps) {
   const qc = useQueryClient();
+  const { showToast } = useToast();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [groupBy, setGroupBy] = React.useState<GroupBy>(() => {
@@ -103,11 +105,20 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof api.tasks.update>[1] }) =>
       api.tasks.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks", projectId] }),
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "Task update failed", "error");
+    },
   });
 
   const deleteTask = useMutation({
     mutationFn: (id: string) => api.tasks.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks", projectId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+      showToast("Task deleted");
+    },
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "Task delete failed", "error");
+    },
   });
 
   const createTask = useMutation({
@@ -133,6 +144,10 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
         dueDate: "",
       });
       qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+      showToast("Task added");
+    },
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "Task add failed", "error");
     },
   });
 

@@ -15,6 +15,7 @@ import {
 } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { InlineSelectCell, InlineTextCell } from "./TaskInlineEdit";
 
 interface TaskDetailPanelProps {
@@ -51,10 +52,13 @@ function StageBadge({ name }: { name: string }) {
 
 export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) {
   const qc = useQueryClient();
+  const { showToast } = useToast();
   const [description, setDescription] = React.useState("");
   const [link, setLink] = React.useState("");
   const [commentText, setCommentText] = React.useState("");
   const prevTaskId = React.useRef<string | null>(null);
+  const savedDescription = React.useRef("");
+  const savedLink = React.useRef("");
 
   React.useEffect(() => {
     if (row && row.task.id !== prevTaskId.current) {
@@ -62,6 +66,8 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
       setDescription(row.task.description ?? "");
       setLink(row.task.link ?? "");
       setCommentText("");
+      savedDescription.current = row.task.description ?? "";
+      savedLink.current = row.task.link ?? "";
     }
   }, [row?.task.id]);
 
@@ -86,8 +92,13 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   const updateTask = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof api.tasks.update>[1] }) =>
       api.tasks.update(id, data),
-    onSuccess: () => {
-      if (row) qc.invalidateQueries({ queryKey: ["tasks", row.task.projectId] });
+    onSuccess: (updated) => {
+      qc.setQueryData<TaskRow[]>(["tasks", updated.projectId], (current) =>
+        current?.map((taskRow) =>
+          taskRow.task.id === updated.id ? { ...taskRow, task: updated } : taskRow
+        )
+      );
+      qc.invalidateQueries({ queryKey: ["tasks", updated.projectId] });
     },
   });
 
@@ -98,18 +109,61 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
     onSuccess: () => {
       setCommentText("");
       qc.invalidateQueries({ queryKey: ["task-comments", row?.task.id] });
+      showToast("Comment posted");
+    },
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "Comment failed", "error");
     },
   });
 
   const uploadAttachment = useMutation({
     mutationFn: (file: File) => api.attachments.upload(row!.task.id, file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["task-attachments", row?.task.id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["task-attachments", row?.task.id] });
+      showToast("Attachment complete");
+    },
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "Attachment failed", "error");
+    },
   });
 
   const addComment = () => {
     if (!commentText.trim()) return;
     createComment.mutate(commentText.trim());
   };
+
+  async function saveTaskData(
+    data: Parameters<typeof api.tasks.update>[1],
+    successMessage: string
+  ) {
+    if (!row) return null;
+    try {
+      const updated = await updateTask.mutateAsync({ id: row.task.id, data });
+      showToast(successMessage);
+      return updated;
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Save failed", "error");
+      return null;
+    }
+  }
+
+  async function saveDescription() {
+    if (!row || updateTask.isPending || description === savedDescription.current) return;
+    const updated = await saveTaskData({ description }, "Description saved");
+    if (updated) savedDescription.current = updated.description ?? "";
+  }
+
+  async function saveLink() {
+    const nextLink = link.trim() || null;
+    if (!row || updateTask.isPending || nextLink === savedLink.current) return;
+    const updated = await saveTaskData({ link: nextLink }, "Google Drive link saved");
+    if (updated) savedLink.current = updated.link ?? "";
+  }
+
+  async function handleClose() {
+    await Promise.all([saveDescription(), saveLink()]);
+    onClose();
+  }
 
   return (
     <>
@@ -119,7 +173,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
           "fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300",
           visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
-        onClick={onClose}
+        onClick={() => void handleClose()}
       />
 
       {/* Sliding panel */}
@@ -138,7 +192,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             Task Details
           </span>
           <button
-            onClick={onClose}
+            onClick={() => void handleClose()}
             className="rounded-md p-1.5 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
           >
             <X className="h-4 w-4" />
@@ -152,7 +206,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             <div className="border-b border-slate-100 px-4 pb-4 pt-5 sm:px-6 sm:pt-6">
               <InlineTextCell
                 value={row.task.name}
-                onCommit={(name) => updateTask.mutate({ id: row.task.id, data: { name } })}
+                onCommit={(name) => void saveTaskData({ name }, "Task name saved")}
                 className="text-xl font-bold text-slate-800"
               />
             </div>
@@ -168,7 +222,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                       value: v as TaskStatus,
                       label: c.label,
                     }))}
-                    onCommit={(s) => updateTask.mutate({ id: row.task.id, data: { status: s } })}
+                    onCommit={(s) => void saveTaskData({ status: s }, "Status saved")}
                     renderValue={(v) => (
                       <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", STATUS_CONFIG[v].bg, STATUS_CONFIG[v].color)}>
                         {STATUS_CONFIG[v].label}
@@ -186,7 +240,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                       label: c.label,
                       className: c.color,
                     }))}
-                    onCommit={(p) => updateTask.mutate({ id: row.task.id, data: { priority: p } })}
+                    onCommit={(p) => void saveTaskData({ priority: p }, "Priority saved")}
                     renderValue={(v) => (
                       <span className={cn("text-sm font-medium", PRIORITY_CONFIG[v].color)}>
                         {PRIORITY_CONFIG[v].label}
@@ -201,10 +255,10 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                     value={row.task.channel ?? "__none"}
                     options={[{ value: "__none", label: "None" }, ...CHANNEL_OPTIONS]}
                     onCommit={(channel) =>
-                      updateTask.mutate({
-                        id: row.task.id,
-                        data: { channel: channel === "__none" ? null : (channel as TaskChannel) },
-                      })
+                      void saveTaskData(
+                        { channel: channel === "__none" ? null : (channel as TaskChannel) },
+                        "Channel saved"
+                      )
                     }
                     renderValue={(channel) =>
                       channel === "__none" ? (
@@ -230,10 +284,10 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                       })),
                     ]}
                     onCommit={(stageId) =>
-                      updateTask.mutate({
-                        id: row.task.id,
-                        data: { stageId: stageId === "__none" ? null : stageId },
-                      })
+                      void saveTaskData(
+                        { stageId: stageId === "__none" ? null : stageId },
+                        "Stage saved"
+                      )
                     }
                     renderValue={(stageId) => {
                       const selected =
@@ -255,10 +309,10 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                       ...assignableUsers.map((user) => ({ value: user.id, label: user.name })),
                     ]}
                     onCommit={(assigneeId) =>
-                      updateTask.mutate({
-                        id: row.task.id,
-                        data: { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
-                      })
+                      void saveTaskData(
+                        { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
+                        "Assignee saved"
+                      )
                     }
                     renderValue={(userId) => {
                       const selected =
@@ -287,10 +341,10 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                     type="date"
                     value={toDateInputValue(row.task.dueDate)}
                     onChange={(event) =>
-                      updateTask.mutate({
-                        id: row.task.id,
-                        data: { dueDate: fromDateInputValue(event.target.value) },
-                      })
+                      void saveTaskData(
+                        { dueDate: fromDateInputValue(event.target.value) },
+                        "Due date saved"
+                      )
                     }
                     className="h-8 rounded-md border border-slate-200 bg-slate-50 px-2 text-sm text-slate-700 outline-none focus:border-ring focus:ring-1 focus:ring-ring"
                     title={formatDate(row.task.dueDate)}
@@ -300,33 +354,51 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             </div>
 
             <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Google Drive Link</p>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Google Drive Link</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7"
+                  disabled={(link.trim() || null) === savedLink.current || updateTask.isPending}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => void saveLink()}
+                >
+                  Save
+                </Button>
+              </div>
               <input
                 className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
                 placeholder="Paste Google Drive link..."
                 value={link}
                 onChange={(event) => setLink(event.target.value)}
-                onBlur={() => {
-                  if (link !== (row.task.link ?? "")) {
-                    updateTask.mutate({ id: row.task.id, data: { link: link.trim() || null } });
-                  }
-                }}
+                onBlur={() => void saveLink()}
               />
             </div>
 
             {/* Description */}
             <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Description</p>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Description</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7"
+                  disabled={description === savedDescription.current || updateTask.isPending}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => void saveDescription()}
+                >
+                  Save
+                </Button>
+              </div>
               <textarea
                 className="w-full min-h-[120px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-y transition-colors"
                 placeholder="Add a description…"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                onBlur={() => {
-                  if (description !== (row.task.description ?? "")) {
-                    updateTask.mutate({ id: row.task.id, data: { description } });
-                  }
-                }}
+                onBlur={() => void saveDescription()}
               />
             </div>
 

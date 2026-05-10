@@ -10,6 +10,7 @@ import { NewProjectPage } from "@/pages/Projects";
 import { ProjectDetailPage } from "@/pages/ProjectDetail";
 import { UsersPage } from "@/pages/Users";
 import { TimeTrackerPage } from "@/pages/TimeTracker";
+import { ToastProvider } from "@/components/ui/toast";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,21 +24,23 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/projects/new" element={<NewProjectPage />} />
-            <Route path="/projects/:id" element={<ProjectDetailPage />} />
-            <Route path="/time-tracker" element={<TimeTrackerPage />} />
-            <Route path="/users" element={<UsersPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/projects/new" element={<NewProjectPage />} />
+              <Route path="/projects/:id" element={<ProjectDetailPage />} />
+              <Route path="/time-tracker" element={<TimeTrackerPage />} />
+              <Route path="/users" element={<UsersPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

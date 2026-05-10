@@ -54,6 +54,14 @@ export function ProjectDetailPage() {
       : uniqueStages.sort((a, b) => a.orderIndex - b.orderIndex);
   }, [stages]);
 
+  React.useEffect(() => {
+    if (!selectedRow) return;
+    const freshRow = taskRows.find((row) => row.task.id === selectedRow.task.id);
+    if (freshRow && freshRow !== selectedRow) {
+      setSelectedRow(freshRow);
+    }
+  }, [selectedRow, taskRows]);
+
   if (projectLoading) {
     return <div className="text-muted-foreground text-sm">Loading project…</div>;
   }
