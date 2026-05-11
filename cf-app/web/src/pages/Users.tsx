@@ -32,7 +32,6 @@ export function UsersPage() {
     name: "",
     email: "",
     password: "",
-    avatar: "",
     role: "member" as EditableUserRole,
   });
 
@@ -64,11 +63,10 @@ export function UsersPage() {
         name: newUser.name.trim(),
         email: newUser.email.trim(),
         password: newUser.password,
-        avatar: newUser.avatar.trim() || null,
         role: newUser.role,
       }),
     onSuccess: () => {
-      setNewUser({ name: "", email: "", password: "", avatar: "", role: "member" });
+      setNewUser({ name: "", email: "", password: "", role: "member" });
       qc.invalidateQueries({ queryKey: ["users"] });
       showToast("User added");
     },
@@ -137,7 +135,7 @@ export function UsersPage() {
 
       {canManageUsers && (
         <form
-          className="grid gap-2 rounded-lg border bg-white p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_130px_auto]"
+          className="grid gap-2 rounded-lg border bg-white p-3 sm:grid-cols-[1fr_1fr_1fr_130px_auto]"
           onSubmit={(event) => {
             event.preventDefault();
             if (newUser.name.trim() && newUser.email.trim() && newUser.password.length >= 8) {
@@ -161,11 +159,6 @@ export function UsersPage() {
             placeholder="Temporary password"
             value={newUser.password}
             onChange={(event) => setNewUser((user) => ({ ...user, password: event.target.value }))}
-          />
-          <Input
-            placeholder="Avatar URL"
-            value={newUser.avatar}
-            onChange={(event) => setNewUser((user) => ({ ...user, avatar: event.target.value }))}
           />
           <select
             value={newUser.role}
@@ -206,7 +199,6 @@ export function UsersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">User</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Role</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Avatar</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Created</th>
                 {canManageUsers && (
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Actions</th>
@@ -270,18 +262,6 @@ export function UsersPage() {
                           <ShieldCheck className="h-3 w-3" />
                           {user.role}
                         </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {canEditRow ? (
-                        <Input
-                          value={draft.avatar ?? ""}
-                          placeholder="Avatar URL"
-                          onChange={(event) => updateDraft(user.id, { avatar: event.target.value })}
-                          className="h-8 min-w-56"
-                        />
-                      ) : (
-                        <span className="text-muted-foreground">{user.avatar || "None"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
