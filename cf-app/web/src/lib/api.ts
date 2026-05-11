@@ -131,6 +131,31 @@ export const api = {
   users: {
     me: () => request<User>("/api/users/me"),
     list: () => request<User[]>("/api/users"),
+    create: (data: {
+      name: string;
+      email: string;
+      password: string;
+      avatar?: string | null;
+      role?: Extract<User["role"], "admin" | "member">;
+    }) =>
+      request<User>("/api/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (
+      id: string,
+      data: {
+        name?: string;
+        avatar?: string | null;
+        role?: Extract<User["role"], "admin" | "member">;
+      }
+    ) =>
+      request<User>(`/api/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<{ success: boolean }>(`/api/users/${id}`, { method: "DELETE" }),
     byProject: (projectId: string) =>
       request<Pick<User, "id" | "name" | "email" | "avatar">[]>(
         `/api/users/project/${projectId}`
