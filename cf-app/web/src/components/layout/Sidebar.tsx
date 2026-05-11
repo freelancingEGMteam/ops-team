@@ -32,7 +32,7 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="relative z-[2000] flex w-full shrink-0 flex-col border-b bg-card md:sticky md:top-0 md:h-screen md:w-56 md:border-b-0 md:border-r">
+    <aside className="app-sidebar relative z-[2000] flex w-full shrink-0 flex-col border-b bg-card md:sticky md:top-0 md:h-screen md:w-56 md:border-b-0 md:border-r">
       {/* Logo */}
       <div className="flex h-12 items-center justify-between gap-2 px-3 font-bold text-primary md:h-14 md:px-4">
         <span className="text-lg">⚡ Ops</span>

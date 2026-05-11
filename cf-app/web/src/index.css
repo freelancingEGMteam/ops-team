@@ -58,3 +58,22 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@media (hover: none) and (pointer: coarse) {
+  .app-shell {
+    height: auto !important;
+    overflow: visible !important;
+    flex-direction: column !important;
+  }
+
+  .app-sidebar {
+    position: relative !important;
+    top: auto !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+
+  .app-main {
+    overflow: visible !important;
+  }
+}
