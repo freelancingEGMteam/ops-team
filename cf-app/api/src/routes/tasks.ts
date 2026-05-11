@@ -106,13 +106,20 @@ async function sendMentionEmails(
   recipients: { name: string; email: string }[],
   details: { projectId: string; taskName: string; authorName: string; commentBody: string }
 ) {
-  if (!c.env.RESEND_API_KEY || !c.env.RESEND_FROM_EMAIL || recipients.length === 0) return;
+  if (!c.env.RESEND_API_KEY || !c.env.RESEND_FROM_EMAIL) {
+    console.warn("Mention email skipped: missing Resend configuration");
+    return;
+  }
+  if (recipients.length === 0) {
+    console.info("Mention email skipped: no recipients matched");
+    return;
+  }
 
   const origin = c.req.header("Origin") ?? "https://ops-team.pages.dev";
   const taskUrl = `${origin}/projects/${details.projectId}`;
-  await Promise.all(
-    recipients.map((recipient) =>
-      fetch("https://api.resend.com/emails", {
+  const results = await Promise.all(
+    recipients.map(async (recipient) => {
+      const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
@@ -132,9 +139,19 @@ async function sendMentionEmails(
             `Open the task: ${taskUrl}`,
           ].join("\n"),
         }),
-      }).catch(() => undefined)
-    )
+      });
+      const responseText = await response.text().catch(() => "");
+      if (!response.ok) {
+        console.error("Mention email failed", {
+          status: response.status,
+          recipient: recipient.email,
+          response: responseText,
+        });
+      }
+      return { ok: response.ok, status: response.status, recipient: recipient.email };
+    })
   );
+  console.info("Mention email send results", results);
 }
 
 router.get("/", async (c) => {
