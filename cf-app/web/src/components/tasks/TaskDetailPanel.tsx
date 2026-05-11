@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { useUndoRedo } from "@/lib/undo-redo";
 import { InlineSelectCell, InlineTextCell } from "./TaskInlineEdit";
 
 interface TaskDetailPanelProps {
@@ -38,6 +39,10 @@ function fromDateInputValue(value: string): string | null {
   return value ? new Date(`${value}T12:00:00.000Z`).toISOString() : null;
 }
 
+function toTaskDateValue(timestamp: number | null): string | null {
+  return timestamp ? new Date(timestamp).toISOString() : null;
+}
+
 function StageBadge({ name }: { name: string }) {
   const style = getStageStyle(name);
   return (
@@ -53,6 +58,7 @@ function StageBadge({ name }: { name: string }) {
 export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
+  const { record } = useUndoRedo();
   const [description, setDescription] = React.useState("");
   const [link, setLink] = React.useState("");
   const [commentText, setCommentText] = React.useState("");
@@ -134,11 +140,30 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
 
   async function saveTaskData(
     data: Parameters<typeof api.tasks.update>[1],
-    successMessage: string
+    successMessage: string,
+    undoLabel = "task update"
   ) {
     if (!row) return null;
+    const taskId = row.task.id;
+    const projectId = row.task.projectId;
+    const previous: Parameters<typeof api.tasks.update>[1] = {};
+    for (const key of Object.keys(data) as Array<keyof typeof data>) {
+      if (key === "dueDate") previous.dueDate = toTaskDateValue(row.task.dueDate);
+      else previous[key] = row.task[key] as never;
+    }
     try {
-      const updated = await updateTask.mutateAsync({ id: row.task.id, data });
+      const updated = await updateTask.mutateAsync({ id: taskId, data });
+      record({
+        label: undoLabel,
+        undo: async () => {
+          await api.tasks.update(taskId, previous);
+          await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+        },
+        redo: async () => {
+          await api.tasks.update(taskId, data);
+          await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+        },
+      });
       showToast(successMessage);
       return updated;
     } catch (error) {

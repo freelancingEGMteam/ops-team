@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUndoRedo } from "@/lib/undo-redo";
 
 const COLORS = [
   "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e",
@@ -13,6 +14,7 @@ const COLORS = [
 export function NewProjectPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { record } = useUndoRedo();
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [color, setColor] = React.useState(COLORS[0]!);
@@ -20,6 +22,24 @@ export function NewProjectPage() {
   const create = useMutation({
     mutationFn: () => api.projects.create({ name, description: description || undefined, color }),
     onSuccess: (project) => {
+      if (project) {
+        const activeIds = [project.id];
+        const payload = { name, description: description || undefined, color };
+        record({
+          label: "project creation",
+          undo: async () => {
+            await api.projects.delete(activeIds.at(-1)!);
+            await qc.invalidateQueries({ queryKey: ["projects"] });
+            navigate("/");
+          },
+          redo: async () => {
+            const recreated = await api.projects.create(payload);
+            activeIds.push(recreated.id);
+            await qc.invalidateQueries({ queryKey: ["projects"] });
+            navigate(`/projects/${recreated.id}`);
+          },
+        });
+      }
       qc.invalidateQueries({ queryKey: ["projects"] });
       navigate(`/projects/${project!.id}`);
     },

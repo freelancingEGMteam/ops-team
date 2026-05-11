@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ProjectMember, User } from "@/types";
+import { useUndoRedo } from "@/lib/undo-redo";
 
 type ProjectRole = "admin" | "member";
 
@@ -43,6 +44,7 @@ function sortMembers(members: ProjectMember[]) {
 
 export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
   const queryClient = useQueryClient();
+  const { record } = useUndoRedo();
   const [open, setOpen] = React.useState(false);
   const [selectedUserId, setSelectedUserId] = React.useState("");
   const [selectedRole, setSelectedRole] = React.useState<ProjectRole>("member");
@@ -81,6 +83,25 @@ export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
         role: selectedRole,
       }),
     onSuccess: async () => {
+      const userId = selectedUserId;
+      const role = selectedRole;
+      record({
+        label: "project member add",
+        undo: async () => {
+          await api.projects.removeMember(projectId, userId);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["project-members", projectId] }),
+            queryClient.invalidateQueries({ queryKey: ["projects"] }),
+          ]);
+        },
+        redo: async () => {
+          await api.projects.addMember(projectId, { userId, role });
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["project-members", projectId] }),
+            queryClient.invalidateQueries({ queryKey: ["projects"] }),
+          ]);
+        },
+      });
       setSelectedUserId("");
       setSelectedRole("member");
       await Promise.all([
@@ -92,7 +113,30 @@ export function ProjectShareDialog({ projectId }: ProjectShareDialogProps) {
 
   const removeMember = useMutation({
     mutationFn: (userId: string) => api.projects.removeMember(projectId, userId),
-    onSuccess: async () => {
+    onSuccess: async (_result, userId) => {
+      const member = members.find((item) => item.user.id === userId);
+      if (member) {
+        record({
+          label: "project member removal",
+          undo: async () => {
+            await api.projects.addMember(projectId, {
+              userId,
+              role: member.role === "admin" ? "admin" : "member",
+            });
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ["project-members", projectId] }),
+              queryClient.invalidateQueries({ queryKey: ["projects"] }),
+            ]);
+          },
+          redo: async () => {
+            await api.projects.removeMember(projectId, userId);
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ["project-members", projectId] }),
+              queryClient.invalidateQueries({ queryKey: ["projects"] }),
+            ]);
+          },
+        });
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project-members", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),

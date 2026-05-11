@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { useUndoRedo } from "@/lib/undo-redo";
 
 interface TaskTableProps {
   projectId: string;
@@ -59,6 +60,10 @@ function fromDateInputValue(value: string): string | null {
   return value ? new Date(`${value}T12:00:00.000Z`).toISOString() : null;
 }
 
+function toTaskDateValue(timestamp: number | null): string | null {
+  return timestamp ? new Date(timestamp).toISOString() : null;
+}
+
 function StageBadge({ name }: { name: string }) {
   const style = getStageStyle(name);
   return (
@@ -74,6 +79,7 @@ function StageBadge({ name }: { name: string }) {
 export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
+  const { record } = useUndoRedo();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [groupBy, setGroupBy] = React.useState<GroupBy>(() => {
@@ -122,18 +128,21 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
   });
 
   const createTask = useMutation({
-    mutationFn: () =>
-      api.tasks.create({
-        name: newTask.name.trim(),
-        projectId,
-        status: newTask.status,
-        priority: newTask.priority,
-        channel: newTask.channel === "__none" ? null : (newTask.channel as TaskChannel),
-        stageId: newTask.stageId === "__none" ? undefined : newTask.stageId,
-        assigneeId: newTask.assigneeId === "__unassigned" ? undefined : newTask.assigneeId,
-        dueDate: fromDateInputValue(newTask.dueDate) ?? undefined,
-      }),
-    onSuccess: () => {
+    mutationFn: (data: Parameters<typeof api.tasks.create>[0]) => api.tasks.create(data),
+    onSuccess: (created, variables) => {
+      const createdIds = [created.id];
+      record({
+        label: "task creation",
+        undo: async () => {
+          await api.tasks.delete(createdIds.at(-1)!);
+          await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+        },
+        redo: async () => {
+          const recreated = await api.tasks.create(variables);
+          createdIds.push(recreated.id);
+          await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+        },
+      });
       setNewTask({
         name: "",
         status: "todo",
@@ -156,6 +165,85 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
       api.tasks.reorder(updates),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks", projectId] }),
   });
+
+  async function invalidateTasks() {
+    await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+  }
+
+  function taskCreateInput(row: TaskRow): Parameters<typeof api.tasks.create>[0] {
+    return {
+      name: row.task.name,
+      projectId: row.task.projectId,
+      description: row.task.description ?? undefined,
+      link: row.task.link,
+      status: row.task.status,
+      priority: row.task.priority,
+      channel: row.task.channel,
+      stageId: row.task.stageId,
+      assigneeId: row.task.assigneeId,
+      dueDate: toTaskDateValue(row.task.dueDate) ?? undefined,
+      orderIndex: row.task.orderIndex,
+    };
+  }
+
+  async function updateTaskWithUndo(
+    row: TaskRow,
+    data: Parameters<typeof api.tasks.update>[1],
+    label = "task update"
+  ) {
+    const previous: Parameters<typeof api.tasks.update>[1] = {};
+    for (const key of Object.keys(data) as Array<keyof typeof data>) {
+      if (key === "dueDate") previous.dueDate = toTaskDateValue(row.task.dueDate);
+      else previous[key] = row.task[key] as never;
+    }
+
+    await updateTask.mutateAsync({ id: row.task.id, data });
+    record({
+      label,
+      undo: async () => {
+        await api.tasks.update(row.task.id, previous);
+        await invalidateTasks();
+      },
+      redo: async () => {
+        await api.tasks.update(row.task.id, data);
+        await invalidateTasks();
+      },
+    });
+  }
+
+  function createNewTask() {
+    createTask.mutate({
+      name: newTask.name.trim(),
+      projectId,
+      status: newTask.status,
+      priority: newTask.priority,
+      channel: newTask.channel === "__none" ? null : (newTask.channel as TaskChannel),
+      stageId: newTask.stageId === "__none" ? undefined : newTask.stageId,
+      assigneeId: newTask.assigneeId === "__unassigned" ? undefined : newTask.assigneeId,
+      dueDate: fromDateInputValue(newTask.dueDate) ?? undefined,
+    });
+  }
+
+  function deleteTaskWithUndo(row: TaskRow) {
+    const payload = taskCreateInput(row);
+    const activeIds = [row.task.id];
+    deleteTask.mutate(row.task.id, {
+      onSuccess: () => {
+        record({
+          label: "task deletion",
+          undo: async () => {
+            const restored = await api.tasks.create(payload);
+            activeIds.push(restored.id);
+            await invalidateTasks();
+          },
+          redo: async () => {
+            await api.tasks.delete(activeIds.at(-1)!);
+            await invalidateTasks();
+          },
+        });
+      },
+    });
+  }
 
   const handleDragStart = (taskId: string) => setDragTaskId(taskId);
   const handleDragOver = (e: React.DragEvent, taskId: string) => {
@@ -183,9 +271,31 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
     setOrderedRows(updated);
     setDragTaskId(null);
     setDropTaskId(null);
-    reorderTasks.mutate(
-      updated.map((r, i) => ({ taskId: r.task.id, stageId: r.task.stageId, orderIndex: i }))
-    );
+    const nextUpdates = updated.map((r, i) => ({
+      taskId: r.task.id,
+      stageId: r.task.stageId,
+      orderIndex: i,
+    }));
+    const previousUpdates = orderedRows.map((r) => ({
+      taskId: r.task.id,
+      stageId: r.task.stageId,
+      orderIndex: r.task.orderIndex,
+    }));
+    reorderTasks.mutate(nextUpdates, {
+      onSuccess: () => {
+        record({
+          label: "task reorder",
+          undo: async () => {
+            await api.tasks.reorder(previousUpdates);
+            await invalidateTasks();
+          },
+          redo: async () => {
+            await api.tasks.reorder(nextUpdates);
+            await invalidateTasks();
+          },
+        });
+      },
+    });
   };
 
   const columns = [
@@ -215,7 +325,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
       cell: ({ getValue, row }) => (
         <InlineTextCell
           value={getValue()}
-          onCommit={(name) => updateTask.mutate({ id: row.original.task.id, data: { name } })}
+          onCommit={(name) => void updateTaskWithUndo(row.original, { name }, "task name update")}
           className="font-medium"
         />
       ),
@@ -231,9 +341,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
             value: v as TaskStatus,
             label: c.label,
           }))}
-          onCommit={(status) =>
-            updateTask.mutate({ id: row.original.task.id, data: { status } })
-          }
+          onCommit={(status) => void updateTaskWithUndo(row.original, { status }, "status update")}
           renderValue={(status) => (
             <span
               className={cn(
@@ -261,7 +369,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
             className: c.color,
           }))}
           onCommit={(priority) =>
-            updateTask.mutate({ id: row.original.task.id, data: { priority } })
+            void updateTaskWithUndo(row.original, { priority }, "priority update")
           }
           renderValue={(priority) => (
             <span className={cn("text-xs font-medium", PRIORITY_CONFIG[priority].color)}>
@@ -280,10 +388,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
           value={getValue() ?? "__none"}
           options={[{ value: "__none", label: "None" }, ...CHANNEL_OPTIONS]}
           onCommit={(channel) =>
-            updateTask.mutate({
-              id: row.original.task.id,
-              data: { channel: channel === "__none" ? null : (channel as TaskChannel) },
-            })
+            void updateTaskWithUndo(
+              row.original,
+              { channel: channel === "__none" ? null : (channel as TaskChannel) },
+              "channel update"
+            )
           }
           renderValue={(channel) =>
             channel === "__none" ? (
@@ -311,10 +420,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
               ...stages.map((s) => ({ value: s.id, label: <StageBadge name={s.name} /> })),
             ]}
             onCommit={(stageId) =>
-              updateTask.mutate({
-                id: row.original.task.id,
-                data: { stageId: stageId === "__none" ? null : stageId },
-              })
+              void updateTaskWithUndo(
+                row.original,
+                { stageId: stageId === "__none" ? null : stageId },
+                "stage update"
+              )
             }
             renderValue={(stageId) => {
               const selected =
@@ -340,10 +450,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
               ...assignableUsers.map((user) => ({ value: user.id, label: user.name })),
             ]}
             onCommit={(assigneeId) =>
-              updateTask.mutate({
-                id: row.original.task.id,
-                data: { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
-              })
+              void updateTaskWithUndo(
+                row.original,
+                { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
+                "assignee update"
+              )
             }
             renderValue={(userId) => {
               const selected =
@@ -379,10 +490,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
           value={toDateInputValue(getValue())}
           onClick={(event) => event.stopPropagation()}
           onChange={(event) =>
-            updateTask.mutate({
-              id: row.original.task.id,
-              data: { dueDate: fromDateInputValue(event.target.value) },
-            })
+            void updateTaskWithUndo(
+              row.original,
+              { dueDate: fromDateInputValue(event.target.value) },
+              "due date update"
+            )
           }
           className="h-8 rounded-md border border-transparent bg-transparent px-2 text-sm text-muted-foreground outline-none hover:border-input hover:bg-background focus:border-ring focus:ring-1 focus:ring-ring"
           title={formatDate(getValue())}
@@ -396,7 +508,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
         <button
           onClick={(e) => {
             e.stopPropagation();
-            deleteTask.mutate(row.original.task.id);
+            deleteTaskWithUndo(row.original);
           }}
           className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-destructive"
           title="Delete task"
@@ -506,13 +618,13 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                       <GripVertical className="mt-2 h-4 w-4 shrink-0 text-slate-300" />
                       <InlineTextCell
                         value={task.name}
-                        onCommit={(name) => updateTask.mutate({ id: task.id, data: { name } })}
+                        onCommit={(name) => void updateTaskWithUndo(row.original, { name }, "task name update")}
                         className="min-w-0 flex-1 font-semibold"
                       />
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          deleteTask.mutate(task.id);
+                          deleteTaskWithUndo(row.original);
                         }}
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-destructive"
                         title="Delete task"
@@ -527,7 +639,9 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                           value: v as TaskStatus,
                           label: c.label,
                         }))}
-                        onCommit={(status) => updateTask.mutate({ id: task.id, data: { status } })}
+                        onCommit={(status) =>
+                          void updateTaskWithUndo(row.original, { status }, "status update")
+                        }
                         renderValue={(status) => (
                           <span
                             className={cn(
@@ -548,7 +662,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                           className: c.color,
                         }))}
                         onCommit={(priority) =>
-                          updateTask.mutate({ id: task.id, data: { priority } })
+                          void updateTaskWithUndo(row.original, { priority }, "priority update")
                         }
                         renderValue={(priority) => (
                           <span className={cn("text-xs font-medium", PRIORITY_CONFIG[priority].color)}>
@@ -560,10 +674,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                         value={task.channel ?? "__none"}
                         options={[{ value: "__none", label: "None" }, ...CHANNEL_OPTIONS]}
                         onCommit={(channel) =>
-                          updateTask.mutate({
-                            id: task.id,
-                            data: { channel: channel === "__none" ? null : (channel as TaskChannel) },
-                          })
+                          void updateTaskWithUndo(
+                            row.original,
+                            { channel: channel === "__none" ? null : (channel as TaskChannel) },
+                            "channel update"
+                          )
                         }
                         renderValue={(channel) =>
                           channel === "__none" ? (
@@ -582,10 +697,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                           ...stages.map((s) => ({ value: s.id, label: <StageBadge name={s.name} /> })),
                         ]}
                         onCommit={(stageId) =>
-                          updateTask.mutate({
-                            id: task.id,
-                            data: { stageId: stageId === "__none" ? null : stageId },
-                          })
+                          void updateTaskWithUndo(
+                            row.original,
+                            { stageId: stageId === "__none" ? null : stageId },
+                            "stage update"
+                          )
                         }
                         renderValue={(stageId) => {
                           const selected =
@@ -604,10 +720,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                           ...assignableUsers.map((user) => ({ value: user.id, label: user.name })),
                         ]}
                         onCommit={(assigneeId) =>
-                          updateTask.mutate({
-                            id: task.id,
-                            data: { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
-                          })
+                          void updateTaskWithUndo(
+                            row.original,
+                            { assigneeId: assigneeId === "__unassigned" ? null : assigneeId },
+                            "assignee update"
+                          )
                         }
                         renderValue={(userId) => {
                           const selected =
@@ -626,10 +743,11 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                         value={toDateInputValue(task.dueDate)}
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event) =>
-                          updateTask.mutate({
-                            id: task.id,
-                            data: { dueDate: fromDateInputValue(event.target.value) },
-                          })
+                          void updateTaskWithUndo(
+                            row.original,
+                            { dueDate: fromDateInputValue(event.target.value) },
+                            "due date update"
+                          )
                         }
                         className="h-8 rounded-md border bg-background px-2 text-xs"
                       />
@@ -646,7 +764,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
         className="grid gap-2 rounded-lg border bg-white p-3 sm:hidden"
         onSubmit={(e) => {
           e.preventDefault();
-          if (newTask.name.trim()) createTask.mutate();
+          if (newTask.name.trim()) createNewTask();
         }}
       >
         <Input
@@ -825,7 +943,7 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
         className="hidden overflow-auto rounded-lg border bg-white sm:block"
         onSubmit={(e) => {
           e.preventDefault();
-          if (newTask.name.trim()) createTask.mutate();
+          if (newTask.name.trim()) createNewTask();
         }}
       >
         <div

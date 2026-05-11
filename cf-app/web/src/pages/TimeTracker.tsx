@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { ApiError, api } from "@/lib/api";
 import { TimeTrackerShareDialog } from "@/components/time-tracker/TimeTrackerShareDialog";
 import type { TimeEntry, TimeEntryChannel, TimeEntryStatus } from "@/types";
+import { useUndoRedo } from "@/lib/undo-redo";
 
 type EditableEntry = {
   id: string;
@@ -51,6 +52,7 @@ const emptyDraft: DraftEntry = {
 
 export function TimeTrackerPage() {
   const queryClient = useQueryClient();
+  const { record } = useUndoRedo();
   const [entries, setEntries] = React.useState<EditableEntry[]>([]);
   const [draft, setDraft] = React.useState<DraftEntry>(emptyDraft);
 
@@ -83,17 +85,37 @@ export function TimeTrackerPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (entryDraft: DraftEntry) =>
       api.timeEntries.create({
-        startDate: dateToIso(draft.startDate),
-        task: draft.task.trim(),
-        price: Number(draft.price || 0),
-        channel: draft.channel === "None" ? null : draft.channel,
-        deliveryDate: dateToIso(draft.deliveryDate),
-        status: draft.status,
+        startDate: dateToIso(entryDraft.startDate),
+        task: entryDraft.task.trim(),
+        price: Number(entryDraft.price || 0),
+        channel: entryDraft.channel === "None" ? null : entryDraft.channel,
+        deliveryDate: dateToIso(entryDraft.deliveryDate),
+        status: entryDraft.status,
       }),
-    onSuccess: async (entry) => {
+    onSuccess: async (entry, variables) => {
       if (entry) {
+        const activeIds = [entry.id];
+        record({
+          label: "time entry creation",
+          undo: async () => {
+            await api.timeEntries.delete(activeIds.at(-1)!);
+            await queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+          },
+          redo: async () => {
+            const recreated = await api.timeEntries.create({
+              startDate: dateToIso(variables.startDate),
+              task: variables.task.trim(),
+              price: Number(variables.price || 0),
+              channel: variables.channel === "None" ? null : variables.channel,
+              deliveryDate: dateToIso(variables.deliveryDate),
+              status: variables.status,
+            });
+            activeIds.push(recreated.id);
+            await queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+          },
+        });
         setEntries((current) => {
           const next = mapEntry(entry);
           return current.some((item) => item.id === next.id) ? current : [...current, next];
@@ -111,6 +133,17 @@ export function TimeTrackerPage() {
     },
   });
 
+  function toTimeEntryInput(entry: EditableEntry) {
+    return {
+      startDate: dateToIso(entry.startDate),
+      task: entry.task.trim(),
+      price: Number(entry.price || 0),
+      channel: entry.channel === "None" ? null : entry.channel,
+      deliveryDate: dateToIso(entry.deliveryDate),
+      status: entry.status,
+    };
+  }
+
   const total = entries.reduce((sum, entry) => sum + Number(entry.price || 0), 0);
   const completed = entries.filter((entry) => entry.status === "Done").length;
 
@@ -119,16 +152,72 @@ export function TimeTrackerPage() {
       current.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry))
     );
 
-    if (save) updateMutation.mutate({ id, patch });
+    if (save) saveEntry(id, patch);
   }
 
   function saveEntry(id: string, patch: Partial<EditableEntry>) {
-    updateMutation.mutate({ id, patch });
+    const current =
+      data.find((entry) => entry.id === id) ? mapEntry(data.find((entry) => entry.id === id)!) : entries.find((entry) => entry.id === id);
+    const previous: Partial<EditableEntry> = {};
+    if (current) {
+      for (const key of Object.keys(patch) as Array<keyof EditableEntry>) {
+        previous[key] = current[key] as never;
+      }
+    }
+    updateMutation.mutate(
+      { id, patch },
+      {
+        onSuccess: () => {
+          if (!current) return;
+          record({
+            label: "time entry update",
+            undo: async () => {
+              await api.timeEntries.update(id, {
+                ...(previous.startDate !== undefined ? { startDate: dateToIso(previous.startDate) } : {}),
+                ...(previous.task !== undefined ? { task: previous.task } : {}),
+                ...(previous.price !== undefined ? { price: Number(previous.price || 0) } : {}),
+                ...(previous.channel !== undefined
+                  ? { channel: previous.channel === "None" ? null : previous.channel }
+                  : {}),
+                ...(previous.deliveryDate !== undefined
+                  ? { deliveryDate: dateToIso(previous.deliveryDate) }
+                  : {}),
+                ...(previous.status !== undefined ? { status: previous.status } : {}),
+              });
+              await queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+            },
+            redo: async () => {
+              await updateMutation.mutateAsync({ id, patch });
+            },
+          });
+        },
+      }
+    );
   }
 
   function addEntry() {
     if (!draft.task.trim() || createMutation.isPending) return;
-    createMutation.mutate();
+    createMutation.mutate(draft);
+  }
+
+  function deleteEntry(entry: EditableEntry) {
+    const activeIds = [entry.id];
+    deleteMutation.mutate(entry.id, {
+      onSuccess: () => {
+        record({
+          label: "time entry deletion",
+          undo: async () => {
+            const restored = await api.timeEntries.create(toTimeEntryInput(entry));
+            activeIds.push(restored.id);
+            await queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+          },
+          redo: async () => {
+            await api.timeEntries.delete(activeIds.at(-1)!);
+            await queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+          },
+        });
+      },
+    });
   }
 
   function addEntryFromKeyDown(event: React.KeyboardEvent) {
@@ -192,7 +281,7 @@ export function TimeTrackerPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => deleteMutation.mutate(entry.id)}
+                  onClick={() => deleteEntry(entry)}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-destructive"
                   title="Delete entry"
                 >
@@ -384,7 +473,7 @@ export function TimeTrackerPage() {
                   <td className="px-4 py-3">
                     <button
                       type="button"
-                      onClick={() => deleteMutation.mutate(entry.id)}
+                      onClick={() => deleteEntry(entry)}
                       className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-destructive"
                       title="Delete entry"
                     >

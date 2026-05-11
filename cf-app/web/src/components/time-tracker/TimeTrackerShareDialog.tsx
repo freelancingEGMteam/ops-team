@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { TimeTrackerMember, User } from "@/types";
+import { useUndoRedo } from "@/lib/undo-redo";
 
 type ShareRole = "admin" | "member";
 
@@ -47,6 +48,7 @@ function getShareErrorMessage(error: unknown) {
 
 export function TimeTrackerShareDialog() {
   const queryClient = useQueryClient();
+  const { record } = useUndoRedo();
   const [open, setOpen] = React.useState(false);
   const [selectedUserId, setSelectedUserId] = React.useState("");
   const [selectedRole, setSelectedRole] = React.useState<ShareRole>("member");
@@ -85,6 +87,19 @@ export function TimeTrackerShareDialog() {
         role: selectedRole,
       }),
     onSuccess: async () => {
+      const userId = selectedUserId;
+      const role = selectedRole;
+      record({
+        label: "time tracker member add",
+        undo: async () => {
+          await api.timeEntries.removeMember(userId);
+          await queryClient.invalidateQueries({ queryKey: ["time-tracker-members"] });
+        },
+        redo: async () => {
+          await api.timeEntries.addMember({ userId, role });
+          await queryClient.invalidateQueries({ queryKey: ["time-tracker-members"] });
+        },
+      });
       setSelectedUserId("");
       setSelectedRole("member");
       await queryClient.invalidateQueries({ queryKey: ["time-tracker-members"] });
@@ -93,7 +108,24 @@ export function TimeTrackerShareDialog() {
 
   const removeMember = useMutation({
     mutationFn: api.timeEntries.removeMember,
-    onSuccess: async () => {
+    onSuccess: async (_result, userId) => {
+      const member = members.find((item) => item.user.id === userId);
+      if (member) {
+        record({
+          label: "time tracker member removal",
+          undo: async () => {
+            await api.timeEntries.addMember({
+              userId,
+              role: member.role === "admin" ? "admin" : "member",
+            });
+            await queryClient.invalidateQueries({ queryKey: ["time-tracker-members"] });
+          },
+          redo: async () => {
+            await api.timeEntries.removeMember(userId);
+            await queryClient.invalidateQueries({ queryKey: ["time-tracker-members"] });
+          },
+        });
+      }
       await queryClient.invalidateQueries({ queryKey: ["time-tracker-members"] });
     },
   });

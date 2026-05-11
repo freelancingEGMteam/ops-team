@@ -8,6 +8,7 @@ import { type Stage, type TaskRow, STATUS_CONFIG, PRIORITY_CONFIG } from "@/type
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUndoRedo } from "@/lib/undo-redo";
 
 interface TaskPipelineProps {
   projectId: string;
@@ -17,6 +18,7 @@ interface TaskPipelineProps {
 
 export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
   const qc = useQueryClient();
+  const { record } = useUndoRedo();
   const [newTaskStage, setNewTaskStage] = React.useState<string | null>(null);
   const [newTaskName, setNewTaskName] = React.useState("");
   const [dragging, setDragging] = React.useState<string | null>(null);
@@ -25,7 +27,20 @@ export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
   const createTask = useMutation({
     mutationFn: ({ name, stageId }: { name: string; stageId: string }) =>
       api.tasks.create({ name, projectId, stageId }),
-    onSuccess: () => {
+    onSuccess: (created, variables) => {
+      const createdIds = [created.id];
+      record({
+        label: "task creation",
+        undo: async () => {
+          await api.tasks.delete(createdIds.at(-1)!);
+          await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+        },
+        redo: async () => {
+          const recreated = await api.tasks.create({ ...variables, projectId });
+          createdIds.push(recreated.id);
+          await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+        },
+      });
       setNewTaskStage(null);
       setNewTaskName("");
       qc.invalidateQueries({ queryKey: ["tasks", projectId] });
@@ -61,7 +76,27 @@ export function TaskPipeline({ projectId, stages, rows }: TaskPipelineProps) {
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(null);
-            if (dragging) moveTask.mutate({ taskId: dragging, stageId: stage.id });
+            if (dragging) {
+              const row = rows.find((item) => item.task.id === dragging);
+              moveTask.mutate(
+                { taskId: dragging, stageId: stage.id },
+                {
+                  onSuccess: () => {
+                    record({
+                      label: "task move",
+                      undo: async () => {
+                        await api.tasks.update(dragging, { stageId: row?.task.stageId ?? null });
+                        await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+                      },
+                      redo: async () => {
+                        await api.tasks.update(dragging, { stageId: stage.id });
+                        await qc.invalidateQueries({ queryKey: ["tasks", projectId] });
+                      },
+                    });
+                  },
+                }
+              );
+            }
           }}
         >
           {/* Column header */}

@@ -165,12 +165,15 @@ export const api = {
     create: (data: {
       name: string;
       projectId: string;
-      stageId?: string;
-      assigneeId?: string;
+      description?: string;
+      link?: string | null;
+      stageId?: string | null;
+      assigneeId?: string | null;
       status?: Task["status"];
       priority?: Task["priority"];
       dueDate?: string;
       channel?: Task["channel"];
+      orderIndex?: number;
     }) => request<Task>("/api/tasks", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: TaskUpdateInput) =>
       request<Task>(`/api/tasks/${id}`, {
