@@ -11,6 +11,7 @@ import {
   stages,
   taskComments,
   taskAttachments,
+  mentionNotifications,
 } from "../db/schema";
 import { authMiddleware } from "../middleware/auth";
 import { nanoid } from "../lib/jwt";
@@ -343,6 +344,19 @@ router.post("/:id/comments", zValidator("json", createCommentSchema), async (c) 
     const mentionedUsers = Array.from(
       new Map([...explicitMentions, ...typedMentions].map((member) => [member.id, member])).values()
     );
+    if (mentionedUsers.length > 0) {
+      await db.insert(mentionNotifications).values(
+        mentionedUsers.map((member) => ({
+          id: nanoid(),
+          userId: member.id,
+          projectId: task.projectId,
+          taskId,
+          commentId: row.id,
+          authorId: userId,
+          createdAt: now,
+        }))
+      ).onConflictDoNothing();
+    }
     await sendMentionEmails(c, mentionedUsers, {
       projectId: task.projectId,
       taskName: task.name,

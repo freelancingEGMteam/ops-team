@@ -77,6 +77,16 @@ export interface TaskComment {
   author: Pick<User, "id" | "name" | "email" | "avatar">;
 }
 
+export interface MentionNotification {
+  id: string;
+  readAt: number | null;
+  createdAt: number;
+  project: Pick<Project, "id" | "name" | "color">;
+  task: Pick<Task, "id" | "name" | "status" | "priority">;
+  comment: Pick<TaskComment, "id" | "body" | "createdAt">;
+  author: Pick<User, "id" | "name" | "email" | "avatar">;
+}
+
 export interface TaskAttachment {
   id: string;
   taskId: string;

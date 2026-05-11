@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, LayoutGrid, List } from "lucide-react";
 import { api } from "@/lib/api";
 import { TaskTable } from "@/components/tasks/TaskTable";
@@ -16,8 +16,12 @@ type ViewMode = "table" | "pipeline" | "calendar";
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const qc = useQueryClient();
   const [view, setView] = React.useState<ViewMode>("table");
   const [selectedRow, setSelectedRow] = React.useState<TaskRow | null>(null);
+  const taskIdFromUrl = searchParams.get("task");
+  const mentionIdFromUrl = searchParams.get("mention");
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", id],
@@ -61,6 +65,21 @@ export function ProjectDetailPage() {
       setSelectedRow(freshRow);
     }
   }, [selectedRow, taskRows]);
+
+  const markMentionRead = useMutation({
+    mutationFn: api.mentions.markRead,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["mentions"] }),
+  });
+
+  React.useEffect(() => {
+    if (!taskIdFromUrl || taskRows.length === 0) return;
+    const row = taskRows.find((item) => item.task.id === taskIdFromUrl);
+    if (row) setSelectedRow(row);
+  }, [taskIdFromUrl, taskRows]);
+
+  React.useEffect(() => {
+    if (mentionIdFromUrl) markMentionRead.mutate(mentionIdFromUrl);
+  }, [mentionIdFromUrl]);
 
   if (projectLoading) {
     return <div className="text-muted-foreground text-sm">Loading project…</div>;

@@ -7,6 +7,7 @@ import {
   LogOut,
   Plus,
   Users,
+  AtSign,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -18,6 +19,7 @@ import { UndoRedoControls } from "@/lib/undo-redo";
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/time-tracker", icon: Clock3, label: "Time Tracker" },
+  { to: "/mentions", icon: AtSign, label: "My Mentions" },
   { to: "/users", icon: Users, label: "Users" },
 ];
 

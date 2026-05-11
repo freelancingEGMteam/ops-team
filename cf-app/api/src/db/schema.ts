@@ -131,6 +131,33 @@ export const taskAttachments = sqliteTable("task_attachments", {
     .default(sql`(unixepoch() * 1000)`),
 });
 
+export const mentionNotifications = sqliteTable(
+  "mention_notifications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    commentId: text("comment_id")
+      .notNull()
+      .references(() => taskComments.id, { onDelete: "cascade" }),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => [uniqueIndex("mention_notifications_unique_idx").on(t.userId, t.commentId)]
+);
+
 export const timeEntries = sqliteTable("time_entries", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id, {
@@ -196,6 +223,7 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
 export type TaskComment = typeof taskComments.$inferSelect;
 export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type MentionNotification = typeof mentionNotifications.$inferSelect;
 export type TimeEntry = typeof timeEntries.$inferSelect;
 export type TimeTrackerMember = typeof timeTrackerMembers.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

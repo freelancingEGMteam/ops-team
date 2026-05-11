@@ -12,6 +12,7 @@ import type {
   TimeEntryStatus,
   TimeTrackerMember,
   User,
+  MentionNotification,
 } from "@/types";
 
 const BASE =
@@ -206,6 +207,12 @@ export const api = {
       data.append("file", file);
       return upload<TaskAttachment>(`/api/tasks/${taskId}/attachments`, data);
     },
+  },
+
+  mentions: {
+    list: () => request<MentionNotification[]>("/api/mentions"),
+    markRead: (id: string) =>
+      request<{ success: boolean }>(`/api/mentions/${id}/read`, { method: "PATCH" }),
   },
 
   timeEntries: {

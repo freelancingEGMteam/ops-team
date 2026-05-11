@@ -10,6 +10,7 @@ import { NewProjectPage } from "@/pages/Projects";
 import { ProjectDetailPage } from "@/pages/ProjectDetail";
 import { UsersPage } from "@/pages/Users";
 import { TimeTrackerPage } from "@/pages/TimeTracker";
+import { MentionsPage } from "@/pages/Mentions";
 import { ToastProvider } from "@/components/ui/toast";
 import { UndoRedoProvider } from "@/lib/undo-redo";
 
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="/projects/new" element={<NewProjectPage />} />
                 <Route path="/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/time-tracker" element={<TimeTrackerPage />} />
+                <Route path="/mentions" element={<MentionsPage />} />
                 <Route path="/users" element={<UsersPage />} />
               </Route>
             </Routes>

@@ -8,6 +8,7 @@ import stagesRouter from "./routes/stages";
 import tasksRouter from "./routes/tasks";
 import timeEntriesRouter from "./routes/time-entries";
 import usersRouter from "./routes/users";
+import mentionsRouter from "./routes/mentions";
 import type { Bindings, Variables } from "./types";
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -52,6 +53,7 @@ app.route("/api/stages", stagesRouter);
 app.route("/api/tasks", tasksRouter);
 app.route("/api/time-entries", timeEntriesRouter);
 app.route("/api/users", usersRouter);
+app.route("/api/mentions", mentionsRouter);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 app.onError((err, c) => {
