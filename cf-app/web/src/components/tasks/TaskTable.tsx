@@ -642,7 +642,7 @@ export function TaskTable({
 
       <div className="space-y-3 sm:hidden">
         {groupedRows.map((group) => (
-          <section key={group.key} className="rounded-lg border bg-white">
+          <section key={group.key} className="overflow-hidden rounded-lg border bg-slate-100/70">
             <div
               className={cn(
                 "border-b px-3 py-2 text-xs font-bold uppercase tracking-wider",
@@ -654,7 +654,7 @@ export function TaskTable({
                 {group.rows.length}
               </span>
             </div>
-            <div className="divide-y">
+            <div className="space-y-3 p-3">
               {group.rows.map((row) => {
                 const task = row.original.task;
                 const stage = row.original.stage;
@@ -662,7 +662,7 @@ export function TaskTable({
                 return (
                   <article
                     key={row.id}
-                    className="space-y-3 px-3 py-3"
+                    className="space-y-3 rounded-lg border border-slate-200 bg-white px-3 py-3 shadow-md shadow-slate-200/80 transition-shadow active:shadow-sm"
                     onClick={() => onRowClick?.(row.original)}
                   >
                     <div className="flex items-start gap-2">
@@ -1030,7 +1030,7 @@ export function TaskTable({
                     onDrop={() => handleDrop(visibleRows)}
                     onClick={() => onRowClick?.(row.original)}
                     className={cn(
-                      "group/row border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer",
+                      "group/row border-b last:border-0 cursor-pointer shadow-sm shadow-slate-200/60 transition-[background-color,box-shadow] hover:bg-muted/30 hover:shadow-md hover:shadow-slate-200/80",
                       dropTaskId === row.original.task.id &&
                         dragTaskId !== null &&
                         "border-t-2 border-indigo-500"
