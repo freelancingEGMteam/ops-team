@@ -265,7 +265,8 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
 
   async function saveLink() {
     const nextLink = link.trim() || null;
-    if (!row || updateTask.isPending || nextLink === savedLink.current) return;
+    const currentLink = savedLink.current.trim() || null;
+    if (!row || updateTask.isPending || nextLink === currentLink) return;
     const updated = await saveTaskData({ link: nextLink }, "Google Drive link saved");
     if (updated) savedLink.current = updated.link ?? "";
   }
