@@ -80,8 +80,7 @@ function normalizeMention(value: string) {
 
 function findMentionedUsers(
   body: string,
-  members: { id: string; name: string; email: string; avatar: string | null }[],
-  authorId: string
+  members: { id: string; name: string; email: string; avatar: string | null }[]
 ) {
   const mentionedTerms = new Set(
     [...body.matchAll(/@([^\s,.;:!?()[\]{}]+)/g)].map((match) =>
@@ -90,8 +89,6 @@ function findMentionedUsers(
   );
 
   return members.filter((member) => {
-    if (member.id === authorId) return false;
-
     const name = normalizeMention(member.name);
     const firstName = name.split(" ")[0] ?? "";
     const emailUser = normalizeMention(member.email.split("@")[0] ?? "");
@@ -337,10 +334,8 @@ router.post("/:id/comments", zValidator("json", createCommentSchema), async (c) 
       .where(eq(projectMembers.projectId, task.projectId))
       .all();
     const explicitMentionIds = new Set(body.mentionedUserIds ?? []);
-    const explicitMentions = projectUsers.filter(
-      (member) => member.id !== userId && explicitMentionIds.has(member.id)
-    );
-    const typedMentions = findMentionedUsers(body.body, projectUsers, userId);
+    const explicitMentions = projectUsers.filter((member) => explicitMentionIds.has(member.id));
+    const typedMentions = findMentionedUsers(body.body, projectUsers);
     const mentionedUsers = Array.from(
       new Map([...explicitMentions, ...typedMentions].map((member) => [member.id, member])).values()
     );
