@@ -77,6 +77,22 @@ function StageBadge({ name }: { name: string }) {
   );
 }
 
+function groupHeaderClass(label: string) {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("no ")) return "border-slate-200 bg-slate-100 text-slate-700";
+  if (normalized === "biv") return "border-indigo-200 bg-indigo-100 text-indigo-800";
+  if (normalized === "egm") return "border-emerald-200 bg-emerald-100 text-emerald-800";
+  if (normalized.includes("review")) return "border-violet-200 bg-violet-100 text-violet-800";
+  if (normalized.includes("progress")) return "border-blue-200 bg-blue-100 text-blue-800";
+  if (normalized.includes("done")) return "border-emerald-200 bg-emerald-100 text-emerald-800";
+  if (normalized.includes("urgent") || normalized.includes("high")) {
+    return "border-red-200 bg-red-100 text-red-800";
+  }
+  if (normalized.includes("medium")) return "border-amber-200 bg-amber-100 text-amber-800";
+  if (normalized.includes("low")) return "border-slate-200 bg-slate-100 text-slate-700";
+  return "border-blue-200 bg-blue-50 text-blue-900";
+}
+
 export function TaskTable({
   projectId,
   stages,
@@ -604,9 +620,14 @@ export function TaskTable({
       <div className="space-y-3 sm:hidden">
         {groupedRows.map((group) => (
           <section key={group.key} className="rounded-lg border bg-white">
-            <div className="border-b bg-slate-100 px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+            <div
+              className={cn(
+                "border-b px-3 py-2 text-xs font-bold uppercase tracking-wider",
+                groupHeaderClass(group.label)
+              )}
+            >
               {group.label}
-              <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+              <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-current">
                 {group.rows.length}
               </span>
             </div>
@@ -966,10 +987,13 @@ export function TaskTable({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="border-y bg-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-700"
+                    className={cn(
+                      "border-y px-4 py-3 text-xs font-bold uppercase tracking-wider",
+                      groupHeaderClass(group.label)
+                    )}
                   >
                     {group.label}
-                    <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                    <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-current">
                       {group.rows.length}
                     </span>
                   </td>

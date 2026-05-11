@@ -32,9 +32,9 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="app-sidebar relative z-[2000] flex w-full shrink-0 flex-col border-b bg-card lg:sticky lg:top-0 lg:h-screen lg:w-56 lg:border-b-0 lg:border-r">
+    <aside className="app-sidebar relative z-[2000] flex w-full shrink-0 flex-col border-b border-slate-800 bg-[#061a33] text-slate-100 lg:sticky lg:top-0 lg:h-screen lg:w-56 lg:border-b-0 lg:border-r">
       {/* Logo */}
-      <div className="flex h-12 items-center justify-between gap-2 px-3 font-bold text-primary lg:h-14 lg:px-4">
+      <div className="flex h-12 items-center justify-between gap-2 px-3 font-bold text-white lg:h-14 lg:px-4">
         <span className="text-lg">⚡ Ops</span>
         <UndoRedoControls />
       </div>
@@ -51,8 +51,8 @@ export function Sidebar() {
               cn(
                 "relative z-[2001] flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-blue-500 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-white/10 hover:text-white"
               )
             }
           >
@@ -69,8 +69,8 @@ export function Sidebar() {
               cn(
                 "relative z-[2001] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm lg:shrink",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-blue-500 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-white/10 hover:text-white"
               )
             }
           >
@@ -81,7 +81,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative z-[2001] h-7 w-7 shrink-0 lg:h-8 lg:w-8"
+          className="relative z-[2001] h-7 w-7 shrink-0 text-slate-300 hover:bg-white/10 hover:text-white lg:h-8 lg:w-8"
           onClick={() => window.location.assign("/projects/new")}
           title="New project"
         >
@@ -90,7 +90,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="mt-auto hidden border-t p-3 lg:block">
+      <div className="mt-auto hidden border-t border-white/10 p-3 lg:block">
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7">
             {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
@@ -99,12 +99,12 @@ export function Sidebar() {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium">{user?.name}</p>
-            <p className="truncate text-[10px] text-muted-foreground">{user?.email}</p>
+            <p className="truncate text-xs font-medium text-white">{user?.name}</p>
+            <p className="truncate text-[10px] text-slate-400">{user?.email}</p>
           </div>
           <button
             onClick={logout}
-            className="rounded p-1 text-muted-foreground hover:text-foreground"
+            className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white"
             title="Sign out"
           >
             <LogOut className="h-3.5 w-3.5" />

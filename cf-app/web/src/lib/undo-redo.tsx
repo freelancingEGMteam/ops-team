@@ -116,12 +116,12 @@ export function UndoRedoControls() {
   const { canUndo, canRedo, isWorking, undoLabel, redoLabel, undo, redo } = useUndoRedo();
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
+    <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/10 p-1 shadow-sm">
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 text-slate-200 hover:bg-white/10 hover:text-white disabled:text-slate-500"
         disabled={!canUndo || isWorking}
         onClick={() => void undo()}
         title={undoLabel ? `Undo ${undoLabel}` : "Undo"}
@@ -133,7 +133,7 @@ export function UndoRedoControls() {
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 text-slate-200 hover:bg-white/10 hover:text-white disabled:text-slate-500"
         disabled={!canRedo || isWorking}
         onClick={() => void redo()}
         title={redoLabel ? `Redo ${redoLabel}` : "Redo"}
