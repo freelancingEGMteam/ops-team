@@ -27,7 +27,7 @@ const taskChannel = z.enum(["BIV", "EGM"]);
 
 const createTaskSchema = z.object({
   name: z.string().min(1).max(300),
-  description: z.string().max(5000).optional(),
+  description: z.string().max(100000).optional(),
   link: z.string().url().or(z.literal("")).nullable().optional(),
   projectId: z.string(),
   stageId: z.string().nullable().optional(),
