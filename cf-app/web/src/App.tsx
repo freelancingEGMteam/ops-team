@@ -11,7 +11,7 @@ import { ProjectDetailPage } from "@/pages/ProjectDetail";
 import { UsersPage } from "@/pages/Users";
 import { TimeTrackerPage } from "@/pages/TimeTracker";
 import { ToastProvider } from "@/components/ui/toast";
-import { UndoRedoControls, UndoRedoProvider } from "@/lib/undo-redo";
+import { UndoRedoProvider } from "@/lib/undo-redo";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,9 +28,6 @@ export default function App() {
       <ToastProvider>
         <UndoRedoProvider>
           <BrowserRouter>
-            <div className="fixed right-3 top-3 z-[3000]">
-              <UndoRedoControls />
-            </div>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />

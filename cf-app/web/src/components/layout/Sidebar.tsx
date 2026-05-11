@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/auth";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { UndoRedoControls } from "@/lib/undo-redo";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -31,8 +32,9 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 z-[2000] flex w-full shrink-0 flex-col border-b bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
       {/* Logo */}
-      <div className="flex h-10 items-center px-3 font-bold text-primary sm:h-12 md:h-14 md:px-4">
+      <div className="flex h-12 items-center justify-between gap-2 px-3 font-bold text-primary md:h-14 md:px-4">
         <span className="text-lg">⚡ Ops</span>
+        <UndoRedoControls />
       </div>
 
       {/* Primary nav */}
