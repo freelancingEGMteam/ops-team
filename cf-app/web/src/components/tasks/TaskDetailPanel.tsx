@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, MessageSquare, Paperclip, Send } from "lucide-react";
+import { X, MessageSquare, Paperclip, Send, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 import { getStageStyle } from "@/lib/stages";
@@ -140,6 +140,18 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
     },
     onError: (error) => {
       showToast(error instanceof Error ? error.message : "Comment failed", "error");
+    },
+  });
+
+  const deleteComment = useMutation({
+    mutationFn: (commentId: string) => api.comments.delete(row!.task.id, commentId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["task-comments", row?.task.id] });
+      qc.invalidateQueries({ queryKey: ["mentions"] });
+      showToast("Comment removed");
+    },
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "Comment delete failed", "error");
     },
   });
 
@@ -540,6 +552,16 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
                       <div className="flex items-baseline gap-2 mb-1">
                         <span className="text-xs font-semibold text-slate-700">{c.author.name}</span>
                         <span className="text-[10px] text-slate-400">{formatDate(c.createdAt)}</span>
+                        <button
+                          type="button"
+                          className="ml-auto rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-destructive"
+                          title="Remove comment"
+                          aria-label="Remove comment"
+                          disabled={deleteComment.isPending}
+                          onClick={() => deleteComment.mutate(c.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                       <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 text-sm text-slate-700">
                         {c.body}

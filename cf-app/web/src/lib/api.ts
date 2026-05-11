@@ -197,6 +197,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ body, mentionedUserIds }),
       }),
+    delete: (taskId: string, commentId: string) =>
+      request<{ success: boolean }>(`/api/tasks/${taskId}/comments/${commentId}`, {
+        method: "DELETE",
+      }),
   },
 
   attachments: {

@@ -363,6 +363,37 @@ router.post("/:id/comments", zValidator("json", createCommentSchema), async (c) 
   return c.json(row, 201);
 });
 
+router.delete("/:id/comments/:commentId", async (c) => {
+  const db = createDb(c.env.DB);
+  const userId = c.get("user").sub;
+  const taskId = c.req.param("id");
+  const commentId = c.req.param("commentId");
+
+  const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).get();
+  if (!task) return c.json({ error: "Not found" }, 404);
+
+  const membership = await requireMembership(db, task.projectId, userId);
+  if (!membership) return c.json({ error: "Forbidden" }, 403);
+
+  const comment = await db
+    .select()
+    .from(taskComments)
+    .where(and(eq(taskComments.id, commentId), eq(taskComments.taskId, taskId)))
+    .get();
+
+  if (!comment) return c.json({ error: "Not found" }, 404);
+  if (comment.authorId !== userId && membership.role !== "owner" && membership.role !== "admin") {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  await db
+    .delete(mentionNotifications)
+    .where(eq(mentionNotifications.commentId, commentId));
+  await db.delete(taskComments).where(eq(taskComments.id, commentId));
+
+  return c.json({ success: true });
+});
+
 router.get("/:id/attachments", async (c) => {
   const db = createDb(c.env.DB);
   const userId = c.get("user").sub;

@@ -13,10 +13,22 @@ export function MentionsPage() {
     queryKey: ["mentions"],
     queryFn: api.mentions.list,
   });
+  const unreadMentions = mentions.filter((mention) => !mention.readAt);
 
   const markRead = useMutation({
     mutationFn: api.mentions.markRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mentions"] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["mentions"] });
+      const previous = queryClient.getQueryData<typeof mentions>(["mentions"]);
+      queryClient.setQueryData<typeof mentions>(["mentions"], (current) =>
+        current?.filter((mention) => mention.id !== id) ?? []
+      );
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(["mentions"], context?.previous ?? []);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["mentions"] }),
   });
 
   return (
@@ -32,14 +44,14 @@ export function MentionsPage() {
         <div className="rounded-lg border bg-white px-4 py-8 text-sm text-muted-foreground">
           Loading mentions...
         </div>
-      ) : mentions.length === 0 ? (
+      ) : unreadMentions.length === 0 ? (
         <div className="rounded-lg border bg-white px-4 py-10 text-center text-sm text-muted-foreground">
           No mentions yet.
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border bg-white">
           <div className="divide-y">
-            {mentions.map((mention) => (
+            {unreadMentions.map((mention) => (
               <article
                 key={mention.id}
                 className={cn(
@@ -109,6 +121,16 @@ export function MentionsPage() {
                     <ExternalLink className="h-3.5 w-3.5" />
                     Open
                   </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={markRead.isPending}
+                  onClick={() => markRead.mutate(mention.id)}
+                >
+                  Mark as read
                 </Button>
               </article>
             ))}
