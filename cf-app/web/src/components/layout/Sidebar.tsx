@@ -32,15 +32,15 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="app-sidebar relative z-[2000] flex w-full shrink-0 flex-col border-b bg-card md:sticky md:top-0 md:h-screen md:w-56 md:border-b-0 md:border-r">
+    <aside className="app-sidebar relative z-[2000] flex w-full shrink-0 flex-col border-b bg-card lg:sticky lg:top-0 lg:h-screen lg:w-56 lg:border-b-0 lg:border-r">
       {/* Logo */}
-      <div className="flex h-12 items-center justify-between gap-2 px-3 font-bold text-primary md:h-14 md:px-4">
+      <div className="flex h-12 items-center justify-between gap-2 px-3 font-bold text-primary lg:h-14 lg:px-4">
         <span className="text-lg">⚡ Ops</span>
         <UndoRedoControls />
       </div>
 
       {/* Primary nav */}
-      <nav className="pointer-events-auto flex gap-1 overflow-x-auto px-2 pb-1.5 md:flex-col md:gap-0.5 md:py-2">
+      <nav className="pointer-events-auto flex gap-1 overflow-x-auto px-2 pb-1.5 lg:flex-col lg:gap-0.5 lg:py-2">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -67,7 +67,7 @@ export function Sidebar() {
             reloadDocument
             className={({ isActive }) =>
               cn(
-                "relative z-[2001] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:shrink",
+                "relative z-[2001] flex max-w-[12rem] shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:max-w-none sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm lg:shrink",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -81,7 +81,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative z-[2001] h-7 w-7 shrink-0 md:h-8 md:w-8"
+          className="relative z-[2001] h-7 w-7 shrink-0 lg:h-8 lg:w-8"
           onClick={() => window.location.assign("/projects/new")}
           title="New project"
         >
@@ -90,7 +90,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="mt-auto hidden border-t p-3 md:block">
+      <div className="mt-auto hidden border-t p-3 lg:block">
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7">
             {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}

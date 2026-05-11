@@ -59,7 +59,7 @@
   }
 }
 
-@media (hover: none) and (pointer: coarse) {
+@media (max-width: 1023px), (hover: none) and (pointer: coarse) {
   .app-shell {
     height: auto !important;
     overflow: visible !important;

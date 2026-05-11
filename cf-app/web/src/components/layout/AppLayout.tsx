@@ -7,9 +7,9 @@ export function AppLayout() {
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
-    <div className="app-shell relative isolate flex min-h-screen flex-col bg-background md:h-screen md:flex-row md:overflow-hidden">
+    <div className="app-shell relative isolate flex min-h-screen flex-col bg-background lg:h-screen lg:flex-row lg:overflow-hidden">
       <Sidebar />
-      <main className="app-main relative z-0 min-w-0 flex-1 p-3 sm:p-4 md:overflow-auto md:p-6">
+      <main className="app-main relative z-0 min-w-0 flex-1 p-3 sm:p-4 lg:overflow-auto lg:p-6">
         <Outlet />
       </main>
     </div>
