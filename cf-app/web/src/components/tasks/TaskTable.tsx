@@ -10,7 +10,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowUpDown, ExternalLink, GripVertical, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 import { getStageStyle } from "@/lib/stages";
@@ -751,6 +751,34 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                         }
                         className="h-8 rounded-md border bg-background px-2 text-xs"
                       />
+                    </div>
+                    <div className="flex flex-col gap-2 rounded-md bg-slate-50 p-2">
+                      {task.link ? (
+                        <a
+                          href={task.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex min-w-0 items-center gap-2 text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{task.link}</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No Google URL</span>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-full bg-white"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRowClick?.(row.original);
+                        }}
+                      >
+                        Open task
+                      </Button>
                     </div>
                   </article>
                 );
