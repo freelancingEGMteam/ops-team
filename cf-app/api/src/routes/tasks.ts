@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, asc } from "drizzle-orm";
@@ -64,6 +65,75 @@ async function requireMembership(
       )
     )
     .get();
+}
+
+function normalizeMention(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function findMentionedUsers(
+  body: string,
+  members: { id: string; name: string; email: string; avatar: string | null }[],
+  authorId: string
+) {
+  const mentionedTerms = new Set(
+    [...body.matchAll(/@([^\s,.;:!?()[\]{}]+)/g)].map((match) =>
+      normalizeMention(match[1] ?? "")
+    )
+  );
+
+  return members.filter((member) => {
+    if (member.id === authorId) return false;
+
+    const name = normalizeMention(member.name);
+    const firstName = name.split(" ")[0] ?? "";
+    const emailUser = normalizeMention(member.email.split("@")[0] ?? "");
+
+    return [name, firstName, emailUser]
+      .filter(Boolean)
+      .some((candidate) => mentionedTerms.has(candidate));
+  });
+}
+
+async function sendMentionEmails(
+  c: Context<{ Bindings: Bindings; Variables: Variables }>,
+  recipients: { name: string; email: string }[],
+  details: { projectId: string; taskName: string; authorName: string; commentBody: string }
+) {
+  if (!c.env.RESEND_API_KEY || !c.env.RESEND_FROM_EMAIL || recipients.length === 0) return;
+
+  const origin = c.req.header("Origin") ?? "https://ops-team.pages.dev";
+  const taskUrl = `${origin}/projects/${details.projectId}`;
+  await Promise.all(
+    recipients.map((recipient) =>
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: c.env.RESEND_FROM_EMAIL,
+          to: recipient.email,
+          subject: `${details.authorName} mentioned you on ${details.taskName}`,
+          text: [
+            `Hi ${recipient.name},`,
+            "",
+            `${details.authorName} mentioned you in a task comment:`,
+            "",
+            details.commentBody,
+            "",
+            `Open the task: ${taskUrl}`,
+          ].join("\n"),
+        }),
+      }).catch(() => undefined)
+    )
+  );
 }
 
 router.get("/", async (c) => {
@@ -234,6 +304,27 @@ router.post("/:id/comments", zValidator("json", createCommentSchema), async (c) 
     .innerJoin(users, eq(taskComments.authorId, users.id))
     .where(eq(taskComments.id, id))
     .get();
+
+  if (row) {
+    const projectUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatar: users.avatar,
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(users.id, projectMembers.userId))
+      .where(eq(projectMembers.projectId, task.projectId))
+      .all();
+    const mentionedUsers = findMentionedUsers(body.body, projectUsers, userId);
+    await sendMentionEmails(c, mentionedUsers, {
+      projectId: task.projectId,
+      taskName: task.name,
+      authorName: row.author.name,
+      commentBody: body.body,
+    });
+  }
 
   return c.json(row, 201);
 });

@@ -381,17 +381,6 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Google Drive Link</p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7"
-                  disabled={(link.trim() || null) === savedLink.current || updateTask.isPending}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => void saveLink()}
-                >
-                  Save
-                </Button>
               </div>
               <input
                 className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
@@ -406,17 +395,6 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Description</p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7"
-                  disabled={description === savedDescription.current || updateTask.isPending}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => void saveDescription()}
-                >
-                  Save
-                </Button>
               </div>
               <textarea
                 className="w-full min-h-[120px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-y transition-colors"
@@ -501,7 +479,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
-                  placeholder="Write a comment… (Enter to post)"
+                  placeholder="Write a comment... tag teammates with @name"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   onKeyDown={(e) => {

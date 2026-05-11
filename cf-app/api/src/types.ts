@@ -6,6 +6,8 @@ export interface Bindings {
   FILES: R2Bucket;
   JWT_SECRET: string;
   CORS_ORIGIN: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
 }
 
 export interface Variables {
