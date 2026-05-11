@@ -55,6 +55,10 @@ function StageBadge({ name }: { name: string }) {
   );
 }
 
+function mentionLabel(name: string) {
+  return `@${name.replace(/\s+/g, "")}`;
+}
+
 export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
@@ -62,6 +66,10 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   const [description, setDescription] = React.useState("");
   const [link, setLink] = React.useState("");
   const [commentText, setCommentText] = React.useState("");
+  const [mentionedUserIds, setMentionedUserIds] = React.useState<string[]>([]);
+  const [mentionQuery, setMentionQuery] = React.useState<string | null>(null);
+  const [activeMentionIndex, setActiveMentionIndex] = React.useState(0);
+  const commentInputRef = React.useRef<HTMLInputElement | null>(null);
   const prevTaskId = React.useRef<string | null>(null);
   const savedDescription = React.useRef("");
   const savedLink = React.useRef("");
@@ -72,6 +80,9 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
       setDescription(row.task.description ?? "");
       setLink(row.task.link ?? "");
       setCommentText("");
+      setMentionedUserIds([]);
+      setMentionQuery(null);
+      setActiveMentionIndex(0);
       savedDescription.current = row.task.description ?? "";
       savedLink.current = row.task.link ?? "";
     }
@@ -80,6 +91,12 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   const { data: assignableUsers = [] } = useQuery({
     queryKey: ["users"],
     queryFn: api.users.list,
+    enabled: !!row,
+  });
+
+  const { data: projectUsers = [] } = useQuery({
+    queryKey: ["project-users", row?.task.projectId],
+    queryFn: () => api.users.byProject(row!.task.projectId),
     enabled: !!row,
   });
 
@@ -111,9 +128,13 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   const visible = !!row;
 
   const createComment = useMutation({
-    mutationFn: (body: string) => api.comments.create(row!.task.id, body),
+    mutationFn: ({ body, mentions }: { body: string; mentions: string[] }) =>
+      api.comments.create(row!.task.id, body, mentions),
     onSuccess: () => {
       setCommentText("");
+      setMentionedUserIds([]);
+      setMentionQuery(null);
+      setActiveMentionIndex(0);
       qc.invalidateQueries({ queryKey: ["task-comments", row?.task.id] });
       showToast("Comment posted");
     },
@@ -135,8 +156,60 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
 
   const addComment = () => {
     if (!commentText.trim()) return;
-    createComment.mutate(commentText.trim());
+    const activeMentions = mentionedUserIds.filter((userId) => {
+      const user = projectUsers.find((item) => item.id === userId);
+      return user ? commentText.includes(mentionLabel(user.name)) : false;
+    });
+    createComment.mutate({ body: commentText.trim(), mentions: activeMentions });
   };
+
+  const mentionOptions = React.useMemo(() => {
+    if (mentionQuery === null) return [];
+    const query = mentionQuery.toLowerCase();
+    return projectUsers
+      .filter((user) => {
+        const haystack = `${user.name} ${user.email}`.toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice(0, 6);
+  }, [mentionQuery, projectUsers]);
+
+  function updateMentionQuery(value: string, cursor: number | null) {
+    if (cursor === null) {
+      setMentionQuery(null);
+      return;
+    }
+    const beforeCursor = value.slice(0, cursor);
+    const match = beforeCursor.match(/(^|\s)@([^\s@]*)$/);
+    setMentionQuery(match ? match[2] ?? "" : null);
+    setActiveMentionIndex(0);
+  }
+
+  function insertMention(user: (typeof projectUsers)[number]) {
+    const input = commentInputRef.current;
+    const cursor = input?.selectionStart ?? commentText.length;
+    const beforeCursor = commentText.slice(0, cursor);
+    const afterCursor = commentText.slice(cursor);
+    const match = beforeCursor.match(/(^|\s)@([^\s@]*)$/);
+    if (!match || match.index === undefined) return;
+
+    const prefix = beforeCursor.slice(0, match.index) + match[1];
+    const label = mentionLabel(user.name);
+    const nextValue = `${prefix}${label} ${afterCursor}`;
+    const nextCursor = `${prefix}${label} `.length;
+
+    setCommentText(nextValue);
+    setMentionedUserIds((current) =>
+      current.includes(user.id) ? current : [...current, user.id]
+    );
+    setMentionQuery(null);
+    setActiveMentionIndex(0);
+
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
 
   async function saveTaskData(
     data: Parameters<typeof api.tasks.update>[1],
@@ -477,18 +550,80 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
-                  placeholder="Write a comment... tag teammates with @name"
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      addComment();
+                <div className="relative flex-1">
+                  <input
+                    ref={commentInputRef}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+                    placeholder="Write a comment... tag teammates with @name"
+                    value={commentText}
+                    onChange={(event) => {
+                      setCommentText(event.target.value);
+                      updateMentionQuery(event.target.value, event.target.selectionStart);
+                    }}
+                    onClick={(event) =>
+                      updateMentionQuery(event.currentTarget.value, event.currentTarget.selectionStart)
                     }
-                  }}
-                />
+                    onKeyDown={(event) => {
+                      if (mentionOptions.length > 0 && mentionQuery !== null) {
+                        if (event.key === "ArrowDown") {
+                          event.preventDefault();
+                          setActiveMentionIndex((current) => (current + 1) % mentionOptions.length);
+                          return;
+                        }
+                        if (event.key === "ArrowUp") {
+                          event.preventDefault();
+                          setActiveMentionIndex(
+                            (current) => (current - 1 + mentionOptions.length) % mentionOptions.length
+                          );
+                          return;
+                        }
+                        if (event.key === "Enter" || event.key === "Tab") {
+                          event.preventDefault();
+                          insertMention(mentionOptions[activeMentionIndex] ?? mentionOptions[0]!);
+                          return;
+                        }
+                        if (event.key === "Escape") {
+                          setMentionQuery(null);
+                          return;
+                        }
+                      }
+
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        addComment();
+                      }
+                    }}
+                  />
+                  {mentionOptions.length > 0 && mentionQuery !== null ? (
+                    <div className="absolute bottom-full left-0 z-[70] mb-2 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+                      {mentionOptions.map((user, index) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
+                            index === activeMentionIndex ? "bg-indigo-50 text-slate-900" : "hover:bg-slate-50"
+                          )}
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            insertMention(user);
+                          }}
+                        >
+                          <Avatar className="h-7 w-7">
+                            {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
+                            <AvatarFallback className="text-[10px]">
+                              {getInitials(user.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{user.name}</span>
+                            <span className="block truncate text-xs text-slate-400">{user.email}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <Button
                   size="sm"
                   variant="outline"

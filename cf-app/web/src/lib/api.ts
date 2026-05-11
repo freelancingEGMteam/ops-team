@@ -191,10 +191,10 @@ export const api = {
 
   comments: {
     list: (taskId: string) => request<TaskComment[]>(`/api/tasks/${taskId}/comments`),
-    create: (taskId: string, body: string) =>
+    create: (taskId: string, body: string, mentionedUserIds: string[] = []) =>
       request<TaskComment>(`/api/tasks/${taskId}/comments`, {
         method: "POST",
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ body, mentionedUserIds }),
       }),
   },
 

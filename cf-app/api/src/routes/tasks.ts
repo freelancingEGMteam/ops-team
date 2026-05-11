@@ -48,6 +48,7 @@ const reorderSchema = z.object({
 
 const createCommentSchema = z.object({
   body: z.string().min(1).max(5000),
+  mentionedUserIds: z.array(z.string()).optional(),
 });
 
 async function requireMembership(
@@ -317,7 +318,14 @@ router.post("/:id/comments", zValidator("json", createCommentSchema), async (c) 
       .innerJoin(users, eq(users.id, projectMembers.userId))
       .where(eq(projectMembers.projectId, task.projectId))
       .all();
-    const mentionedUsers = findMentionedUsers(body.body, projectUsers, userId);
+    const explicitMentionIds = new Set(body.mentionedUserIds ?? []);
+    const explicitMentions = projectUsers.filter(
+      (member) => member.id !== userId && explicitMentionIds.has(member.id)
+    );
+    const typedMentions = findMentionedUsers(body.body, projectUsers, userId);
+    const mentionedUsers = Array.from(
+      new Map([...explicitMentions, ...typedMentions].map((member) => [member.id, member])).values()
+    );
     await sendMentionEmails(c, mentionedUsers, {
       projectId: task.projectId,
       taskName: task.name,
