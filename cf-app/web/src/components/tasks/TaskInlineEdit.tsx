@@ -6,10 +6,17 @@ interface InlineCellProps {
   value: string;
   onCommit: (value: string) => void;
   className?: string;
+  displayValue?: string;
   placeholder?: string;
 }
 
-export function InlineTextCell({ value, onCommit, className, placeholder }: InlineCellProps) {
+export function InlineTextCell({
+  value,
+  onCommit,
+  className,
+  displayValue,
+  placeholder,
+}: InlineCellProps) {
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -38,7 +45,7 @@ export function InlineTextCell({ value, onCommit, className, placeholder }: Inli
           setEditing(true);
         }}
       >
-        {value || placeholder || "—"}
+        {displayValue || value || placeholder || "—"}
       </span>
     );
   }

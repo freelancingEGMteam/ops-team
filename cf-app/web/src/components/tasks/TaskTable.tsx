@@ -65,6 +65,28 @@ function toTaskDateValue(timestamp: number | null): string | null {
   return timestamp ? new Date(timestamp).toISOString() : null;
 }
 
+function compactUrl(value: string) {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return value;
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, "");
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    const firstPart = pathParts[0];
+    const lastPart = pathParts.at(-1);
+    const suffix =
+      lastPart && lastPart !== firstPart
+        ? `${firstPart ?? ""}/.../${lastPart.slice(0, 12)}`
+        : firstPart
+          ? `${firstPart.slice(0, 18)}${firstPart.length > 18 ? "..." : ""}`
+          : "";
+    return suffix ? `${host}/${suffix}` : host;
+  } catch {
+    return value;
+  }
+}
+
 function StageBadge({ name }: { name: string }) {
   const style = getStageStyle(name);
   return (
@@ -348,8 +370,9 @@ export function TaskTable({
       cell: ({ getValue, row }) => (
         <InlineTextCell
           value={getValue()}
+          displayValue={compactUrl(getValue())}
           onCommit={(name) => void updateTaskWithUndo(row.original, { name }, "task name update")}
-          className="font-medium"
+          className="max-w-[28rem] font-medium"
         />
       ),
     }),
@@ -646,6 +669,7 @@ export function TaskTable({
                       <GripVertical className="mt-2 h-4 w-4 shrink-0 text-slate-300" />
                       <InlineTextCell
                         value={task.name}
+                        displayValue={compactUrl(task.name)}
                         onCommit={(name) => void updateTaskWithUndo(row.original, { name }, "task name update")}
                         className="min-w-0 flex-1 font-semibold"
                       />
@@ -950,7 +974,7 @@ export function TaskTable({
       </form>
 
       <div className="hidden overflow-auto rounded-lg border sm:block">
-        <table className="min-w-[1120px] text-sm">
+        <table className="min-w-[1120px] table-fixed text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="border-b bg-[#061a33]">

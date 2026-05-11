@@ -5,7 +5,6 @@ import {
   Clock3,
   FolderKanban,
   LogOut,
-  Plus,
   Users,
   AtSign,
 } from "lucide-react";
@@ -13,7 +12,6 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { UndoRedoControls } from "@/lib/undo-redo";
 
 const NAV_ITEMS = [
@@ -78,15 +76,6 @@ export function Sidebar() {
             <span className="truncate">{p.name}</span>
           </NavLink>
         ))}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative z-[2001] h-7 w-7 shrink-0 text-slate-300 hover:bg-white/10 hover:text-white lg:h-8 lg:w-8"
-          onClick={() => window.location.assign("/projects/new")}
-          title="New project"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
       </nav>
 
       {/* Footer */}
