@@ -774,30 +774,7 @@ export function TaskTable({
                       ) : (
                         <span className="text-xs text-muted-foreground">No Google URL</span>
                       )}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-md border bg-white text-xs">
-                          <InlineSelectCell
-                            value={task.status}
-                            options={Object.entries(STATUS_CONFIG).map(([v, c]) => ({
-                              value: v as TaskStatus,
-                              label: c.label,
-                            }))}
-                            onCommit={(status) =>
-                              void updateTaskWithUndo(row.original, { status }, "status update")
-                            }
-                            renderValue={(status) => (
-                              <span
-                                className={cn(
-                                  "rounded-full px-2 py-0.5 text-xs font-medium",
-                                  STATUS_CONFIG[status].bg,
-                                  STATUS_CONFIG[status].color
-                                )}
-                              >
-                                {STATUS_CONFIG[status].label}
-                              </span>
-                            )}
-                          />
-                        </div>
+                      <div className="grid grid-cols-3 gap-2">
                         {task.link ? (
                           <a
                             href={task.link}
