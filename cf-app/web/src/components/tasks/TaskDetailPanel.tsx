@@ -23,6 +23,7 @@ interface TaskDetailPanelProps {
   row: TaskRow | null;
   stages: Stage[];
   onClose: () => void;
+  initialFocus?: "comments" | null;
 }
 
 const CHANNEL_OPTIONS: { value: TaskChannel; label: string }[] = [
@@ -65,7 +66,7 @@ function normalizeLink(value: string) {
   return /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) {
+export function TaskDetailPanel({ row, stages, onClose, initialFocus }: TaskDetailPanelProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
   const { record } = useUndoRedo();
@@ -76,6 +77,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   const [mentionQuery, setMentionQuery] = React.useState<string | null>(null);
   const [activeMentionIndex, setActiveMentionIndex] = React.useState(0);
   const commentInputRef = React.useRef<HTMLInputElement | null>(null);
+  const commentsSectionRef = React.useRef<HTMLDivElement | null>(null);
   const prevTaskId = React.useRef<string | null>(null);
   const savedDescription = React.useRef("");
   const savedLink = React.useRef("");
@@ -93,6 +95,14 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
       savedLink.current = row.task.link ?? "";
     }
   }, [row?.task.id]);
+
+  React.useEffect(() => {
+    if (!row || initialFocus !== "comments") return;
+    window.setTimeout(() => {
+      commentsSectionRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      commentInputRef.current?.focus();
+    }, 250);
+  }, [initialFocus, row?.task.id]);
 
   const { data: assignableUsers = [] } = useQuery({
     queryKey: ["users"],
@@ -541,7 +551,7 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
             </div>
 
             {/* Comments */}
-            <div className="px-4 py-4 sm:px-6">
+            <div ref={commentsSectionRef} className="px-4 py-4 sm:px-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
                 <MessageSquare className="h-3 w-3" /> Comments
               </p>

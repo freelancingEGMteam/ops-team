@@ -13,13 +13,20 @@ import { STANDARD_STAGE_NAMES } from "@/lib/stages";
 import { type TaskRow } from "@/types";
 
 type ViewMode = "table" | "pipeline" | "calendar";
+type DetailFocus = "comments" | null;
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const [view, setView] = React.useState<ViewMode>("table");
   const [selectedRow, setSelectedRow] = React.useState<TaskRow | null>(null);
+  const [detailFocus, setDetailFocus] = React.useState<DetailFocus>(null);
   const taskIdFromUrl = searchParams.get("task");
+
+  function openTask(row: TaskRow, focus: DetailFocus = null) {
+    setSelectedRow(row);
+    setDetailFocus(focus);
+  }
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", id],
@@ -128,7 +135,8 @@ export function ProjectDetailPage() {
             projectId={id!}
             stages={workflowStages}
             rows={taskRows}
-            onRowClick={(row) => setSelectedRow(row)}
+            onRowClick={(row) => openTask(row)}
+            onRowCommentClick={(row) => openTask(row, "comments")}
           />
         ) : view === "pipeline" ? (
           <TaskPipeline projectId={id!} stages={workflowStages} rows={taskRows} />
@@ -140,7 +148,11 @@ export function ProjectDetailPage() {
       <TaskDetailPanel
         row={selectedRow}
         stages={workflowStages}
-        onClose={() => setSelectedRow(null)}
+        initialFocus={detailFocus}
+        onClose={() => {
+          setSelectedRow(null);
+          setDetailFocus(null);
+        }}
       />
     </>
   );

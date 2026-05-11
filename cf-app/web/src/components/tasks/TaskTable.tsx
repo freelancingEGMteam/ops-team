@@ -10,7 +10,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, ExternalLink, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowUpDown, ExternalLink, GripVertical, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 import { getStageStyle } from "@/lib/stages";
@@ -35,6 +35,7 @@ interface TaskTableProps {
   stages: Stage[];
   rows: TaskRow[];
   onRowClick?: (row: TaskRow) => void;
+  onRowCommentClick?: (row: TaskRow) => void;
 }
 
 const colHelper = createColumnHelper<TaskRow>();
@@ -76,7 +77,13 @@ function StageBadge({ name }: { name: string }) {
   );
 }
 
-export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProps) {
+export function TaskTable({
+  projectId,
+  stages,
+  rows,
+  onRowClick,
+  onRowCommentClick,
+}: TaskTableProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
   const { record } = useUndoRedo();
@@ -767,18 +774,78 @@ export function TaskTable({ projectId, stages, rows, onRowClick }: TaskTableProp
                       ) : (
                         <span className="text-xs text-muted-foreground">No Google URL</span>
                       )}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 w-full bg-white"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onRowClick?.(row.original);
-                        }}
-                      >
-                        Open task
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-md border bg-white text-xs">
+                          <InlineSelectCell
+                            value={task.status}
+                            options={Object.entries(STATUS_CONFIG).map(([v, c]) => ({
+                              value: v as TaskStatus,
+                              label: c.label,
+                            }))}
+                            onCommit={(status) =>
+                              void updateTaskWithUndo(row.original, { status }, "status update")
+                            }
+                            renderValue={(status) => (
+                              <span
+                                className={cn(
+                                  "rounded-full px-2 py-0.5 text-xs font-medium",
+                                  STATUS_CONFIG[status].bg,
+                                  STATUS_CONFIG[status].color
+                                )}
+                              >
+                                {STATUS_CONFIG[status].label}
+                              </span>
+                            )}
+                          />
+                        </div>
+                        {task.link ? (
+                          <a
+                            href={task.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border bg-white px-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Google URL
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            onClick={(event) => event.stopPropagation()}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border bg-white px-2 text-xs font-medium text-slate-300"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Google URL
+                          </button>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 bg-white text-xs"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onRowCommentClick?.(row.original);
+                          }}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Comments
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 bg-white text-xs"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onRowClick?.(row.original);
+                          }}
+                        >
+                          Open task
+                        </Button>
+                      </div>
                     </div>
                   </article>
                 );
