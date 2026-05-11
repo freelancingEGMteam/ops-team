@@ -74,9 +74,6 @@ export function MentionsPage() {
                     <Link
                       to={`/projects/${mention.project.id}?task=${mention.task.id}&mention=${mention.id}`}
                       className="font-medium text-primary hover:underline"
-                      onClick={() => {
-                        if (!mention.readAt) markRead.mutate(mention.id);
-                      }}
                     >
                       {mention.task.name}
                     </Link>
@@ -114,9 +111,6 @@ export function MentionsPage() {
                 <Button asChild variant="outline" size="sm" className="shrink-0">
                   <Link
                     to={`/projects/${mention.project.id}?task=${mention.task.id}&mention=${mention.id}`}
-                    onClick={() => {
-                      if (!mention.readAt) markRead.mutate(mention.id);
-                    }}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     Open
