@@ -38,7 +38,7 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, (body as { error?: string }).error ?? res.statusText);
+    throw new ApiError(res.status, getApiErrorMessage(body, res.statusText));
   }
 
   return res.json() as Promise<T>;
@@ -56,10 +56,31 @@ async function upload<T>(path: string, data: FormData): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, (body as { error?: string }).error ?? res.statusText);
+    throw new ApiError(res.status, getApiErrorMessage(body, res.statusText));
   }
 
   return res.json() as Promise<T>;
+}
+
+function getApiErrorMessage(body: unknown, fallback: string) {
+  const payload = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const error = payload.error ?? payload.message;
+
+  if (typeof error === "string") return error;
+
+  const issues =
+    error && typeof error === "object"
+      ? (error as { issues?: unknown }).issues
+      : payload.issues;
+  if (Array.isArray(issues) && issues.length > 0) {
+    const first = issues[0] as { message?: unknown; path?: unknown };
+    if (typeof first.message === "string") {
+      const path = Array.isArray(first.path) ? first.path.join(".") : "";
+      return path ? `${path}: ${first.message}` : first.message;
+    }
+  }
+
+  return fallback || "Request failed. Please check the value and try again.";
 }
 
 type TaskUpdateInput = Partial<

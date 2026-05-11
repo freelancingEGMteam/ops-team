@@ -59,6 +59,12 @@ function mentionLabel(name: string) {
   return `@${name.replace(/\s+/g, "")}`;
 }
 
+function normalizeLink(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) {
   const qc = useQueryClient();
   const { showToast } = useToast();
@@ -264,11 +270,14 @@ export function TaskDetailPanel({ row, stages, onClose }: TaskDetailPanelProps) 
   }
 
   async function saveLink() {
-    const nextLink = link.trim() || null;
+    const nextLink = normalizeLink(link);
     const currentLink = savedLink.current.trim() || null;
     if (!row || updateTask.isPending || nextLink === currentLink) return;
     const updated = await saveTaskData({ link: nextLink }, "Google Drive link saved");
-    if (updated) savedLink.current = updated.link ?? "";
+    if (updated) {
+      savedLink.current = updated.link ?? "";
+      setLink(updated.link ?? "");
+    }
   }
 
   async function handleClose() {
