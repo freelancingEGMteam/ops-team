@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "headless": false,
+    "delayBetweenPins": 8000
+  },
+  "pins": [
+    {
+      "prompt": "A cozy Scandinavian living room with warm lighting, white walls, wooden furniture, and a large window showing snow outside, interior design photography",
+      "title": "Cozy Scandinavian Living Room Ideas",
+      "description": "Warm minimalist Scandinavian decor with natural wood tones and soft lighting. Perfect winter home inspiration.",
+      "board": "Home Decor Ideas",
+      "link": "https://yourwebsite.com/scandinavian-decor"
+    },
+    {
+      "prompt": "Flat lay of a healthy breakfast bowl with acai, granola, fresh berries, banana slices, and coconut flakes on a marble surface, food photography",
+      "title": "Healthy Acai Breakfast Bowl",
+      "description": "Start your morning right with this vibrant acai bowl packed with superfoods and fresh fruit.",
+      "board": "Healthy Recipes",
+      "link": ""
+    },
+    {
+      "prompt": "A minimalist workspace with a white desk, MacBook, succulent plant, coffee mug, and soft morning light, productivity setup",
+      "title": "Minimalist Home Office Setup",
+      "description": "Clean and calm work-from-home setup for maximum focus and productivity.",
+      "board": "Workspace Inspiration"
+    }
+  ]
+}
