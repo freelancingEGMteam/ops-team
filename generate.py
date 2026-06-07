@@ -168,7 +168,7 @@ def load_prompts() -> list:
         reader = csv.DictReader(f)
         for row in reader:
             filename      = row.get("filename", "").strip()
-            image_prompt  = row.get("image_prompt", "").strip()
+            image_prompt  = row.get("prompt", row.get("image_prompt", "")).strip()
             manual_review = row.get("manual_review", "no").strip().lower()
             scene_number  = row.get("scene_number", "").strip()
             if filename and image_prompt:
