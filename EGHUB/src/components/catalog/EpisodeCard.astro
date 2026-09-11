@@ -1,0 +1,30 @@
+---
+import type { CatalogEpisode } from "@/lib/catalog";
+interface Props {
+  episode: CatalogEpisode;
+}
+const { episode } = Astro.props;
+---
+
+<article class="catalog-card item-shadow">
+  <a href={`/bibleinvideo/${episode.slug}`}>
+    <div class="catalog-art video-art">
+      {
+        episode.poster_url ? (
+          <img
+            src={episode.poster_url}
+            alt={episode.poster_alt || `${episode.title} poster`}
+            loading="lazy"
+          />
+        ) : (
+          <span>▶</span>
+        )
+      }
+    </div>
+    <div class="catalog-card-copy">
+      <span class="eyebrow">{episode.book || "BibleInVideo"}</span>
+      <h3>{episode.title}</h3>
+      <p>{episode.passage || episode.summary || "A cinematic Bible story."}</p>
+    </div>
+  </a>
+</article>

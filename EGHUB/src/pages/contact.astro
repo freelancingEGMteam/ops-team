@@ -1,0 +1,17 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ContactForm from "@/components/site/ContactForm";
+---
+
+<BaseLayout title="Contact" description="Contact the Eternal Grace Hub team.">
+  <section class="content-page">
+    <div class="container-narrow">
+      <span class="eyebrow">Contact</span><h1>How can we help?</h1><p
+        class="lead"
+      >
+        Send a message about an order, a church resource, licensing, or the work
+        itself.
+      </p><div class="panel"><ContactForm client:load /></div>
+    </div>
+  </section>
+</BaseLayout>

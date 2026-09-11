@@ -1,0 +1,62 @@
+---
+import AuthNav from "@/components/auth/AuthNav";
+---
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <div class="container-wide nav-shell">
+    <a href="/" class="brand" aria-label="Eternal Grace Hub home">
+      <span class="brand-mark" aria-hidden="true">EG</span>
+      <span>
+        <strong>Eternal Grace Hub</strong>
+        <small>Scripture · Worship · Grace</small>
+      </span>
+    </a>
+    <button
+      class="nav-mobile-btn"
+      type="button"
+      aria-expanded="false"
+      aria-controls="primary-nav"
+    >
+      <span class="sr-only">Open menu</span><span aria-hidden="true">☰</span>
+    </button>
+    <nav id="primary-nav" class="nav-desktop" aria-label="Primary navigation">
+      <a href="/">Home</a>
+      <a href="/bibleinvideo">BibleInVideo</a>
+      <a href="/resources">Worship</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+      <a href="/search">Search</a>
+      <a href="/cart">Cart</a>
+      <AuthNav client:load />
+      <button class="theme-toggle" type="button" aria-label="Switch color theme"
+        >◐</button
+      >
+    </nav>
+  </div>
+</header>
+
+<script>
+  const menuButton =
+    document.querySelector<HTMLButtonElement>(".nav-mobile-btn");
+  const nav = document.querySelector<HTMLElement>("#primary-nav");
+  menuButton?.addEventListener("click", () => {
+    const open = menuButton.getAttribute("aria-expanded") === "true";
+    menuButton.setAttribute("aria-expanded", String(!open));
+    nav?.classList.toggle("is-open", !open);
+  });
+  nav?.querySelectorAll("a").forEach((link) =>
+    link.addEventListener("click", () => {
+      menuButton?.setAttribute("aria-expanded", "false");
+      nav?.classList.remove("is-open");
+    }),
+  );
+  document
+    .querySelector<HTMLButtonElement>(".theme-toggle")
+    ?.addEventListener("click", () => {
+      const next =
+        document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem("egh-theme", next);
+    });
+</script>

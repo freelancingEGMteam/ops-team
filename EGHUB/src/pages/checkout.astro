@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import CheckoutPage from "@/components/commerce/CheckoutPage";
+---
+
+<BaseLayout
+  title="Checkout"
+  description="Complete your Eternal Grace Hub purchase securely."
+  noindex
+>
+  <CheckoutPage client:only="react" />
+</BaseLayout>

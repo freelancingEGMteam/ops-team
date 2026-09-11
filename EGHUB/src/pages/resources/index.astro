@@ -1,0 +1,72 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProductCard from "@/components/catalog/ProductCard.astro";
+import AlbumCard from "@/components/catalog/AlbumCard.astro";
+import EmptyState from "@/components/site/EmptyState.astro";
+import { getCatalog } from "@/lib/catalog";
+const { products, albums } = await getCatalog();
+---
+
+<BaseLayout
+  title="Worship Resources"
+  description="Albums, chord books, lyric sheets, and worship tools from Eternal Grace Hub."
+>
+  <section class="content-page">
+    <div class="container">
+      <span class="eyebrow">Worship</span><h1>
+        Music and tools for the week ahead.
+      </h1><p class="lead">
+        Listen through Eternal Grace Music and find the MP3s, lyric sheets,
+        chord books, and bundles your church needs.
+      </p>
+    </div>
+  </section>
+  {
+    albums.length > 0 && (
+      <section class="container section-shell">
+        <>
+          <div class="section-heading">
+            <>
+              <div>
+                <>
+                  <span class="eyebrow">Featured albums</span>
+                  <h2>Listen first</h2>
+                </>
+              </div>
+              <a href="/music/albums">Every album →</a>
+            </>
+          </div>
+          <div class="catalog-grid">
+            {albums.slice(0, 3).map((album) => (
+              <AlbumCard album={album} />
+            ))}
+          </div>
+        </>
+      </section>
+    )
+  }
+  <section class="container section-shell">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">Digital library</span><h2>
+          Downloads and bundles
+        </h2>
+      </div>
+    </div>{
+      products.length ? (
+        <div class="catalog-grid">
+          {products.map((product) => (
+            <ProductCard product={product} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="The resource library is being prepared."
+          message="Products will appear here after staff attach the files, pricing, tax code, and publishing approval."
+          actionHref="/register"
+          actionLabel="Create an account"
+        />
+      )
+    }
+  </section>
+</BaseLayout>

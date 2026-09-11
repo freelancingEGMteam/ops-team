@@ -1,0 +1,96 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProductPurchase from "@/components/commerce/ProductPurchase";
+import { formatMoney, getProduct } from "@/lib/catalog";
+const { slug } = Astro.params;
+const product = slug ? await getProduct(slug) : null;
+if (!product) return Astro.redirect("/404");
+const productStructuredData: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: product.title,
+  description: product.description,
+  offers: {
+    "@type": "Offer",
+    price: (product.price_cents / 100).toFixed(2),
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+  },
+};
+---
+
+<BaseLayout
+  title={product.title}
+  description={product.description ||
+    `Download ${product.title} from Eternal Grace Hub.`}
+  canonicalPath={`/resources/${product.slug}`}
+  image={product.cover_url}
+  structuredData={productStructuredData}
+>
+  <section class="content-page">
+    <div class="container product-detail">
+      <div class="product-detail-art">
+        {
+          product.cover_url ? (
+            <img
+              src={product.cover_url}
+              alt={product.cover_alt || `${product.title} artwork`}
+            />
+          ) : (
+            <span aria-hidden="true">↓</span>
+          )
+        }
+      </div>
+      <div>
+        <span class="eyebrow">{product.kind.replaceAll("_", " ")}</span>
+        <h1>{product.title}</h1>
+        <p class="lead">
+          {product.description || "A digital resource from Eternal Grace Hub."}
+        </p>
+        <strong class="product-price">{formatMoney(product.price_cents)}</strong
+        >
+        <ProductPurchase client:load product={product} />
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+<style>
+  .product-detail {
+    display: grid;
+    grid-template-columns: minmax(260px, 480px) 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .product-detail-art {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background:
+      radial-gradient(
+        circle at 65% 35%,
+        rgba(85, 180, 168, 0.22),
+        transparent 36%
+      ),
+      linear-gradient(145deg, #102a36, #07111f);
+    color: var(--gold);
+    font-size: 6rem;
+  }
+  .product-price {
+    display: block;
+    margin-top: 24px;
+    color: var(--gold-bright);
+    font-size: 1.8rem;
+  }
+  .product-detail-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (max-width: 760px) {
+    .product-detail {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import AlbumCard from "@/components/catalog/AlbumCard.astro";
+import EmptyState from "@/components/site/EmptyState.astro";
+import { getCatalog } from "@/lib/catalog";
+const { albums } = await getCatalog();
+---
+
+<BaseLayout
+  title="Worship Albums"
+  description="Browse worship albums from Eternal Grace Music."
+>
+  <section class="content-page">
+    <div class="container">
+      <span class="eyebrow">Eternal Grace Music</span><h1>
+        Albums and singles.
+      </h1><p class="lead">
+        Records written to be heard in order, prayed from beginning to end, and
+        carried into worship gatherings.
+      </p>
+    </div>
+  </section>
+  <section class="container section-shell">
+    {
+      albums.length ? (
+        <div class="catalog-grid">
+          {albums.map((album) => (
+            <AlbumCard album={album} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="No albums are published yet."
+          message="The music catalog will appear here after the first record is reviewed and published."
+        />
+      )
+    }
+  </section>
+</BaseLayout>

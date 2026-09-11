@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import OrderConfirmation from "@/components/commerce/OrderConfirmation";
+---
+
+<BaseLayout
+  title="Order Confirmation"
+  description="Your Eternal Grace Hub order status."
+  noindex
+>
+  <OrderConfirmation client:only="react" />
+</BaseLayout>

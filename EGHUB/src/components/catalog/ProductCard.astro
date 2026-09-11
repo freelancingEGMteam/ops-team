@@ -1,0 +1,35 @@
+---
+import { formatMoney, type CatalogProduct } from "@/lib/catalog";
+interface Props {
+  product: CatalogProduct;
+}
+const { product } = Astro.props;
+---
+
+<article class="catalog-card item-shadow">
+  <a href={`/resources/${product.slug}`}>
+    <div class="catalog-art product-art">
+      {
+        product.cover_url ? (
+          <img
+            src={product.cover_url}
+            alt={product.cover_alt || `${product.title} artwork`}
+            loading="lazy"
+          />
+        ) : (
+          <span>↓</span>
+        )
+      }
+    </div>
+    <div class="catalog-card-copy">
+      <span class="eyebrow"
+        >{product.tag || product.kind.replaceAll("_", " ")}</span
+      >
+      <h3>{product.title}</h3>
+      <p>
+        {product.description || "A digital resource from Eternal Grace Hub."}
+      </p>
+      <strong class="price">{formatMoney(product.price_cents)}</strong>
+    </div>
+  </a>
+</article>

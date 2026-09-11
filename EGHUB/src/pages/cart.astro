@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import CartPage from "@/components/commerce/CartPage";
+---
+
+<BaseLayout
+  title="Cart"
+  description="Review your Eternal Grace Hub digital resources."
+  noindex
+>
+  <CartPage client:only="react" />
+</BaseLayout>

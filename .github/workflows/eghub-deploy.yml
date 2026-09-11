@@ -1,0 +1,43 @@
+name: EGHUB Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "EGHUB/**"
+      - ".github/workflows/eghub-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: EGHUB
+
+jobs:
+  deploy:
+    # Set the production environment variable EGHUB_DEPLOY_ENABLED=true only
+    # after the Vercel secrets below have been configured.
+    if: ${{ vars.EGHUB_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: EGHUB/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Deploy to Vercel
+        run: pnpm exec vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

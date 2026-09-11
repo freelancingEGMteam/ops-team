@@ -1,0 +1,111 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import AlbumCard from "@/components/catalog/AlbumCard.astro";
+import EpisodeCard from "@/components/catalog/EpisodeCard.astro";
+import ProductCard from "@/components/catalog/ProductCard.astro";
+import EmptyState from "@/components/site/EmptyState.astro";
+import { getCatalog } from "@/lib/catalog";
+const query = (Astro.url.searchParams.get("q") || "").trim().toLowerCase();
+const catalog = await getCatalog();
+const albums = query
+  ? catalog.albums.filter((item) =>
+      `${item.title} ${item.description || ""} ${item.scripture || ""}`
+        .toLowerCase()
+        .includes(query),
+    )
+  : [];
+const episodes = query
+  ? catalog.episodes.filter((item) =>
+      `${item.title} ${item.summary || ""} ${item.passage || ""}`
+        .toLowerCase()
+        .includes(query),
+    )
+  : [];
+const products = query
+  ? catalog.products.filter((item) =>
+      `${item.title} ${item.description || ""}`.toLowerCase().includes(query),
+    )
+  : [];
+const resultCount = albums.length + episodes.length + products.length;
+---
+
+<BaseLayout
+  title="Search"
+  description="Search the Eternal Grace Hub catalog."
+  noindex
+>
+  <section class="content-page">
+    <div class="container">
+      <span class="eyebrow">Search</span><h1>
+        Find films, music, and resources.
+      </h1><form class="search-form" method="get">
+        <label class="sr-only" for="q">Search catalog</label><input
+          id="q"
+          name="q"
+          value={query}
+          placeholder="Search by title, Scripture, theme…"
+          autofocus
+        /><button class="btn btn-solid" type="submit">Search</button>
+      </form>
+      {
+        query && (
+          <p class="lead">
+            {resultCount} result{resultCount === 1 ? "" : "s"} for “{query}”
+          </p>
+        )
+      }
+    </div>
+  </section>
+  <section class="container section-shell">
+    {
+      !query ? (
+        <EmptyState
+          title="Search the public catalog."
+          message="Enter a title, Scripture reference, theme, album, or resource name."
+        />
+      ) : resultCount === 0 ? (
+        <EmptyState
+          title="Nothing matched that search."
+          message="Try a shorter phrase or browse the complete libraries."
+          actionHref="/resources"
+          actionLabel="Browse worship"
+        />
+      ) : (
+        <div class="catalog-grid">
+          {albums.map((item) => (
+            <AlbumCard album={item} />
+          ))}
+          {episodes.map((item) => (
+            <EpisodeCard episode={item} />
+          ))}
+          {products.map((item) => (
+            <ProductCard product={item} />
+          ))}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+<style>
+  .search-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    max-width: 760px;
+  }
+  .search-form input {
+    flex: 1;
+    min-width: 0;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-elev);
+    color: var(--ink);
+  }
+  @media (max-width: 600px) {
+    .search-form {
+      flex-direction: column;
+    }
+  }
+</style>

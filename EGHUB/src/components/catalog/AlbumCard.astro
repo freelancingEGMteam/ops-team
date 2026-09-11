@@ -1,0 +1,30 @@
+---
+import type { CatalogAlbum } from "@/lib/catalog";
+interface Props {
+  album: CatalogAlbum;
+}
+const { album } = Astro.props;
+---
+
+<article class="catalog-card item-shadow">
+  <a href={`/music/albums/${album.slug}`}>
+    <div class="catalog-art album-art">
+      {
+        album.cover_url ? (
+          <img
+            src={album.cover_url}
+            alt={album.cover_alt || `${album.title} cover`}
+            loading="lazy"
+          />
+        ) : (
+          <span>EGM</span>
+        )
+      }
+    </div>
+    <div class="catalog-card-copy">
+      <span class="eyebrow">{album.year || "New release"}</span>
+      <h3>{album.title}</h3>
+      <p>{album.scripture || album.theme || "Eternal Grace Music"}</p>
+    </div>
+  </a>
+</article>

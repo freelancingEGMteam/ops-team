@@ -1,0 +1,24 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": [
+    "dist",
+    "legacy",
+    "supabase/functions",
+    "app.jsx",
+    "components.jsx",
+    "pages-1.jsx",
+    "pages-2.jsx",
+    "pages-3.jsx",
+    "tweaks-panel.jsx"
+  ],
+  "compilerOptions": {
+    "allowJs": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+}

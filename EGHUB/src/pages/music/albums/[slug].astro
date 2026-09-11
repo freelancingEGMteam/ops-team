@@ -1,0 +1,124 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getAlbum } from "@/lib/catalog";
+const { slug } = Astro.params;
+const result = slug ? await getAlbum(slug) : null;
+if (!result) return Astro.redirect("/404");
+const { album, tracks } = result;
+---
+
+<BaseLayout
+  title={album.title}
+  description={album.description ||
+    `Listen to ${album.title} by ${album.artist}.`}
+  canonicalPath={`/music/albums/${album.slug}`}
+  image={album.cover_url}
+  structuredData={{
+    "@context": "https://schema.org",
+    "@type": "MusicAlbum",
+    name: album.title,
+    byArtist: { "@type": "MusicGroup", name: album.artist },
+    datePublished: album.published_at,
+    numTracks: tracks.length,
+  }}
+>
+  <section class="content-page">
+    <div class="container album-detail">
+      <div class="album-detail-art">
+        {
+          album.cover_url ? (
+            <img
+              src={album.cover_url}
+              alt={album.cover_alt || `${album.title} cover`}
+            />
+          ) : (
+            <span>EGM</span>
+          )
+        }
+      </div><div>
+        <span class="eyebrow">{album.year || "Eternal Grace Music"}</span><h1>
+          {album.title}
+        </h1><p class="lead">
+          {
+            album.description ||
+              album.scripture ||
+              "A worship record from Eternal Grace Music."
+          }
+        </p><a class="btn btn-solid" href="/resources">Available downloads</a>
+      </div>
+    </div>
+  </section>
+  <section class="container section-shell">
+    <h2>Track list</h2>{
+      tracks.length ? (
+        <ol class="track-list">
+          {tracks.map((track) => (
+            <li>
+              <span>{String(track.track_number).padStart(2, "0")}</span>
+              <strong>{track.title}</strong>
+              <small>{track.song_key || ""}</small>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p class="lead">Track details will appear after they are published.</p>
+      )
+    }
+  </section>
+</BaseLayout>
+<style>
+  .album-detail {
+    display: grid;
+    grid-template-columns: minmax(260px, 480px) 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .album-detail-art {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    background: repeating-radial-gradient(
+      circle,
+      #17314b 0 6px,
+      #08111e 7px 12px
+    );
+    box-shadow: 0 30px 70px -40px #000;
+  }
+  .album-detail-art span {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--gold);
+  }
+  .album-detail-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .album-detail .btn {
+    margin-top: 28px;
+  }
+  .track-list {
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+  .track-list li {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 16px;
+    padding: 16px 8px;
+    border-bottom: 1px solid var(--line-soft);
+    align-items: center;
+  }
+  .track-list span,
+  .track-list small {
+    color: var(--ink-soft);
+  }
+  @media (max-width: 760px) {
+    .album-detail {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import EpisodeCard from "@/components/catalog/EpisodeCard.astro";
+import EmptyState from "@/components/site/EmptyState.astro";
+import { getCatalog } from "@/lib/catalog";
+const { episodes } = await getCatalog();
+---
+
+<BaseLayout
+  title="BibleInVideo"
+  description="Cinematic Bible stories for families, churches, and personal devotion."
+>
+  <section class="content-page">
+    <div class="container">
+      <span class="eyebrow">BibleInVideo</span><h1>
+        Scripture, seen with fresh eyes.
+      </h1><p class="lead">
+        Faithful cinematic retellings made for families, churches, classrooms,
+        and quiet evenings at home.
+      </p>
+    </div>
+  </section>
+  <section class="container section-shell">
+    {
+      episodes.length ? (
+        <div class="catalog-grid">
+          {episodes.map((episode) => (
+            <EpisodeCard episode={episode} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="No episodes are published yet."
+          message="The production team can prepare and publish the first story from the protected admin area."
+        />
+      )
+    }
+  </section>
+</BaseLayout>

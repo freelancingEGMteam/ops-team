@@ -1,0 +1,78 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getEpisode } from "@/lib/catalog";
+const { slug } = Astro.params;
+const episode = slug ? await getEpisode(slug) : null;
+if (!episode) return Astro.redirect("/404");
+const canonicalPath = `/bibleinvideo/${episode.slug}`;
+---
+
+<BaseLayout
+  title={episode.title}
+  description={episode.summary || `Watch ${episode.title} from BibleInVideo.`}
+  canonicalPath={canonicalPath}
+  image={episode.poster_url}
+  structuredData={{
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: episode.title,
+    description: episode.summary || episode.passage || "A BibleInVideo episode",
+    uploadDate: episode.published_at,
+  }}
+>
+  <section class="content-page">
+    <div class="container">
+      <span class="eyebrow"
+        >{episode.book || "BibleInVideo"}
+        {episode.passage ? `· ${episode.passage}` : ""}</span
+      ><h1>{episode.title}</h1><p class="lead">
+        {episode.summary || "This cinematic Bible story is ready to watch."}
+      </p><div class="episode-stage">
+        {
+          episode.video_url ? (
+            <video
+              controls
+              preload="metadata"
+              poster={episode.poster_url || undefined}
+            >
+              <source src={episode.video_url} />
+            </video>
+          ) : (
+            <>
+              <div aria-hidden="true">▶</div>
+              <p>
+                The published video appears here when its public media asset is
+                connected.
+              </p>
+            </>
+          )
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+<style>
+  .episode-stage {
+    margin-top: 38px;
+    aspect-ratio: 16/9;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: linear-gradient(145deg, #11283c, #050b14);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 24px;
+  }
+  .episode-stage div {
+    font-size: 4rem;
+    color: var(--gold);
+  }
+  .episode-stage p {
+    color: var(--ink-dim);
+  }
+  .episode-stage video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+</style>

@@ -1,0 +1,10 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import AccountPortal from "@/components/portal/AccountPortal";
+---
+
+<BaseLayout
+  title="My Account"
+  description="Your private Eternal Grace Hub account."
+  noindex><AccountPortal client:only="react" /></BaseLayout
+>

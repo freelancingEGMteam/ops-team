@@ -1,0 +1,24 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Page not found"
+  description="The requested page was not found."
+  noindex
+>
+  <section class="content-page">
+    <div class="container-narrow">
+      <span class="eyebrow">404</span><h1>This page is not here.</h1><p
+        class="lead"
+      >
+        The link may be old, or the content may no longer be published.
+      </p><a class="btn btn-solid" href="/">Return home</a>
+    </div>
+  </section>
+</BaseLayout>
+<style>
+  .btn {
+    margin-top: 28px;
+  }
+</style>
