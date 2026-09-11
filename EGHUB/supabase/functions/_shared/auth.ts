@@ -9,7 +9,7 @@ export type StaffRole = "owner" | "admin" | "editor" | "support";
 export function adminClient(): SupabaseClient {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SECRET_KEY")!,
+    Deno.env.get("EGHUB_SUPABASE_SECRET_KEY")!,
     {
       auth: { persistSession: false, autoRefreshToken: false },
     },
