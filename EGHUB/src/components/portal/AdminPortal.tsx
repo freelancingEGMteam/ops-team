@@ -672,7 +672,10 @@ function ContentFields({
                 type === "number" ? Number(e.target.value) : e.target.value,
             })
           }
-          required={["title", "slug", "album_id"].includes(name)}
+          required={
+            ["title", "slug"].includes(name) ||
+            (kind === "tracks" && name === "album_id")
+          }
         />
       )}
     </label>
