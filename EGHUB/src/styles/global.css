@@ -105,8 +105,17 @@ body {
 }
 .nav-mobile-btn {
   display: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
   color: white;
   font-size: 1.4rem;
+}
+.nav-mobile-btn:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
 }
 .site-footer {
   margin-top: 72px;
@@ -562,5 +571,146 @@ label.field {
   }
   .footer-grid nav {
     gap: 12px 18px;
+  }
+}
+
+/* Admin mobile layout ----------------------------------------- */
+@media (max-width: 700px) {
+  .portal-shell {
+    width: calc(100% - 24px);
+    margin: 20px auto 40px;
+    gap: 16px;
+  }
+  .portal-sidebar {
+    padding: 12px;
+  }
+  .portal-sidebar strong {
+    margin: 2px 4px 10px;
+  }
+  .portal-nav {
+    gap: 4px;
+    margin: 0 -4px;
+    padding: 0 4px 4px;
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+  }
+  .portal-nav a {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  .admin-signout {
+    min-height: 44px;
+  }
+  .portal-header {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .portal-header h1 {
+    font-size: clamp(1.9rem, 10vw, 2.6rem);
+    overflow-wrap: anywhere;
+  }
+  .portal-header p {
+    font-size: 0.95rem;
+  }
+  .panel,
+  .stat-card {
+    padding: 16px;
+  }
+  .panel {
+    margin-top: 14px;
+  }
+  .panel h2 {
+    font-size: 1.18rem;
+  }
+  .toolbar {
+    align-items: stretch;
+  }
+  .toolbar .portal-input {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .button-row {
+    width: 100%;
+  }
+  .button-row > .btn,
+  .button-row > button {
+    min-height: 44px;
+  }
+
+  /* Turn dense admin tables into readable, scroll-free cards. */
+  .table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+  .portal-table {
+    display: block;
+    min-width: 0;
+  }
+  .portal-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .portal-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+  .portal-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+  .portal-table td {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+    font-size: 0.86rem;
+  }
+  .portal-table td::before {
+    content: attr(data-label);
+    color: var(--ink-soft);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .portal-table td:first-child,
+  .portal-table td:last-child {
+    grid-column: 1 / -1;
+  }
+  .portal-table td:first-child {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .portal-table td:last-child {
+    padding-top: 8px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .portal-table td[data-label="Actions"] .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .portal-table td[data-label="Actions"] button {
+    min-height: 40px;
+    padding: 8px 12px;
+    flex: 1 1 auto;
+  }
+  .portal-table code {
+    font-size: 0.75rem;
+    word-break: break-word;
   }
 }

@@ -598,17 +598,17 @@ function ContentAdmin({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.title}</td>
-                    <td>{row.slug || row.album_id || "—"}</td>
-                    <td>
+                    <td data-label="Title">{row.title}</td>
+                    <td data-label="Slug / parent">{row.slug || row.album_id || "—"}</td>
+                    <td data-label="Status">
                       <span className="status-pill">{row.status}</span>
                     </td>
-                    <td>
+                    <td data-label="Updated">
                       {row.updated_at
                         ? new Date(row.updated_at).toLocaleDateString()
                         : "—"}
                     </td>
-                    <td>
+                    <td data-label="Actions">
                       <div className="button-row">
                         {(canPublish(profile.role) ||
                           ["draft", "review"].includes(row.status)) && (
@@ -952,18 +952,18 @@ function MediaAdmin({
               <tbody>
                 {assets.map((asset) => (
                   <tr key={asset.id}>
-                    <td>{asset.title}</td>
-                    <td>
+                    <td data-label="Name">{asset.title}</td>
+                    <td data-label="Media ID">
                       <code>{asset.id}</code>
                     </td>
-                    <td>{asset.kind}</td>
-                    <td>{asset.bucket}</td>
-                    <td>
+                    <td data-label="Kind">{asset.kind}</td>
+                    <td data-label="Bucket">{asset.bucket}</td>
+                    <td data-label="Size">
                       {asset.size_bytes
                         ? `${(asset.size_bytes / 1024 / 1024).toFixed(1)} MB`
                         : "—"}
                     </td>
-                    <td>
+                    <td data-label="Actions">
                       <button
                         className="button-danger"
                         onClick={() => void remove(asset)}
@@ -1089,14 +1089,14 @@ function OrdersAdmin({ supabase }: { supabase: Client }) {
               <tbody>
                 {orders.map((order) => (
                   <tr key={order.id}>
-                    <td>{order.order_number}</td>
-                    <td>{order.email}</td>
-                    <td>
+                    <td data-label="Order">{order.order_number}</td>
+                    <td data-label="Customer">{order.email}</td>
+                    <td data-label="Status">
                       <span className="status-pill">{order.status}</span>
                     </td>
-                    <td>{formatMoney(order.total_cents)}</td>
-                    <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                    <td>
+                    <td data-label="Total">{formatMoney(order.total_cents)}</td>
+                    <td data-label="Date">{new Date(order.created_at).toLocaleDateString()}</td>
+                    <td data-label="Actions">
                       <div className="button-row">
                         <button onClick={() => void resend(order.id)}>
                           Resend
@@ -1234,9 +1234,9 @@ function PeopleAdmin({
               <tbody>
                 {people.map((person) => (
                   <tr key={person.id}>
-                    <td>{person.full_name || "—"}</td>
-                    <td>{person.email}</td>
-                    <td>
+                    <td data-label="Name">{person.full_name || "—"}</td>
+                    <td data-label="Email">{person.email}</td>
+                    <td data-label="Role">
                       {mode === "staff" &&
                       person.role !== "owner" &&
                       person.id !== profile.id ? (
@@ -1264,10 +1264,10 @@ function PeopleAdmin({
                         person.role
                       )}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span className="status-pill">{person.status}</span>
                     </td>
-                    <td>
+                    <td data-label="Actions">
                       {person.role !== "owner" && person.id !== profile.id && (
                         <button
                           className={
@@ -1395,12 +1395,12 @@ function SettingsAdmin({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.key}>
-                    <td>{row.key}</td>
-                    <td>
+                    <td data-label="Key">{row.key}</td>
+                    <td data-label="Value">
                       <code>{JSON.stringify(row.value)}</code>
                     </td>
-                    <td>{row.is_public ? "Public" : "Staff"}</td>
-                    <td>
+                    <td data-label="Visibility">{row.is_public ? "Public" : "Staff"}</td>
+                    <td data-label="Actions">
                       <button
                         onClick={() => {
                           setKey(row.key);
@@ -1461,11 +1461,11 @@ function AuditAdmin({ supabase }: { supabase: Client }) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{new Date(row.created_at).toLocaleString()}</td>
-                    <td>{row.action}</td>
-                    <td>{row.entity_type}</td>
-                    <td>{row.actor_id || "system"}</td>
-                    <td>
+                    <td data-label="Time">{new Date(row.created_at).toLocaleString()}</td>
+                    <td data-label="Action">{row.action}</td>
+                    <td data-label="Entity">{row.entity_type}</td>
+                    <td data-label="Actor">{row.actor_id || "system"}</td>
+                    <td data-label="Details">
                       <code>{JSON.stringify(row.metadata)}</code>
                     </td>
                   </tr>

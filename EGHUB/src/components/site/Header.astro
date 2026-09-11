@@ -40,17 +40,21 @@ import AuthNav from "@/components/auth/AuthNav";
   const menuButton =
     document.querySelector<HTMLButtonElement>(".nav-mobile-btn");
   const nav = document.querySelector<HTMLElement>("#primary-nav");
+  const setMenuOpen = (open: boolean) => {
+    menuButton?.setAttribute("aria-expanded", String(open));
+    nav?.classList.toggle("is-open", open);
+    document.body.classList.toggle("menu-open", open);
+  };
   menuButton?.addEventListener("click", () => {
     const open = menuButton.getAttribute("aria-expanded") === "true";
-    menuButton.setAttribute("aria-expanded", String(!open));
-    nav?.classList.toggle("is-open", !open);
+    setMenuOpen(!open);
   });
   nav?.querySelectorAll("a").forEach((link) =>
-    link.addEventListener("click", () => {
-      menuButton?.setAttribute("aria-expanded", "false");
-      nav?.classList.remove("is-open");
-    }),
+    link.addEventListener("click", () => setMenuOpen(false)),
   );
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setMenuOpen(false);
+  });
   document
     .querySelector<HTMLButtonElement>(".theme-toggle")
     ?.addEventListener("click", () => {

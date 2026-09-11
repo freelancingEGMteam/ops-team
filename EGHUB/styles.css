@@ -559,6 +559,9 @@ footer .input::placeholder {
   header.site-header .nav-desktop {
     display: none !important;
   }
+  header.site-header .nav-desktop.is-open {
+    display: flex !important;
+  }
   header.site-header .nav-mobile-btn {
     display: grid !important;
     place-items: center;
@@ -649,6 +652,9 @@ footer .input::placeholder {
   }
   header.site-header .mobile-menu-overlay {
     padding: max(20px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)) !important;
+  }
+  body.menu-open {
+    overflow: hidden;
   }
 }
 
