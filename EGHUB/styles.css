@@ -556,16 +556,29 @@ footer .input::placeholder {
 
 /* Responsive safety layer -------------------------------------- */
 @media (max-width: 880px) {
+  header.site-header {
+    backdrop-filter: none;
+    z-index: 1100;
+  }
   header.site-header .nav-desktop {
     display: none !important;
   }
   header.site-header .nav-desktop.is-open {
     display: flex !important;
+    position: fixed !important;
+    inset: 76px 0 0 !important;
+    width: 100vw !important;
+    height: calc(100dvh - 76px) !important;
+    max-height: calc(100dvh - 76px) !important;
+    overflow-y: auto !important;
+    z-index: 1101 !important;
   }
   header.site-header .nav-mobile-btn {
     display: grid !important;
     place-items: center;
     color: #ffffff !important;
+    position: relative;
+    z-index: 1102;
   }
   header.site-header .container-wide {
     width: calc(100% - 24px);
