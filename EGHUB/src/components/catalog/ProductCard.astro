@@ -22,9 +22,13 @@ const { product } = Astro.props;
       }
     </div>
     <div class="catalog-card-copy">
-      <span class="eyebrow"
-        >{product.tag || product.kind.replaceAll("_", " ")}</span
-      >
+      <span class="eyebrow">
+        {
+          product.collection_labels.length
+            ? product.collection_labels.slice(0, 2).join(" · ")
+            : product.tag || product.kind.replaceAll("_", " ")
+        }
+      </span>
       <h3>{product.title}</h3>
       <p>
         {product.description || "A digital resource from Eternal Grace Hub."}

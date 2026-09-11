@@ -1,38 +1,174 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import AlbumCard from "@/components/catalog/AlbumCard.astro";
+import ProductCard from "@/components/catalog/ProductCard.astro";
 import EmptyState from "@/components/site/EmptyState.astro";
 import { getCatalog } from "@/lib/catalog";
-const { albums } = await getCatalog();
+import {
+  isCollectionKey,
+  sourceCollections,
+  type CollectionKey,
+} from "@/lib/collections";
+
+const { albums, products } = await getCatalog();
+const requestedCollection = Astro.url.searchParams.get("collection");
+const activeCollection: CollectionKey = isCollectionKey(requestedCollection)
+  ? requestedCollection
+  : "all";
+const requestedPage = Number.parseInt(
+  Astro.url.searchParams.get("page") || "1",
+  10,
+);
+const pageSize = 48;
+const albumIds = new Set(albums.map((album) => album.id));
+const albumTitles = new Set(
+  albums.map((album) => album.title.trim().toLowerCase()),
+);
+
+type ReleaseEntry =
+  | { type: "album"; item: (typeof albums)[number]; timestamp: number }
+  | { type: "product"; item: (typeof products)[number]; timestamp: number };
+
+const filteredProducts =
+  activeCollection === "all"
+    ? products
+    : products.filter((product) =>
+        product.collections.includes(activeCollection),
+      );
+const distinctProducts = filteredProducts.filter(
+  (product) =>
+    (!product.album_id || !albumIds.has(product.album_id)) &&
+    !albumTitles.has(product.title.trim().toLowerCase()),
+);
+const releaseEntries: ReleaseEntry[] = [
+  ...(activeCollection === "all"
+    ? albums.map((album) => ({
+        type: "album" as const,
+        item: album,
+        timestamp:
+          new Date(album.published_at || album.created_at).getTime() || 0,
+      }))
+    : []),
+  ...distinctProducts.map((product) => ({
+    type: "product" as const,
+    item: product,
+    timestamp:
+      new Date(product.published_at || product.created_at).getTime() || 0,
+  })),
+].sort((left, right) => right.timestamp - left.timestamp);
+
+const totalPages = Math.max(1, Math.ceil(releaseEntries.length / pageSize));
+const currentPage = Math.min(
+  totalPages,
+  Math.max(1, Number.isFinite(requestedPage) ? requestedPage : 1),
+);
+const pageEntries = releaseEntries.slice(
+  (currentPage - 1) * pageSize,
+  currentPage * pageSize,
+);
+
+function collectionHref(collection: CollectionKey, page = 1) {
+  const params = new URLSearchParams();
+  if (collection !== "all") params.set("collection", collection);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return `/music/albums${query ? `?${query}` : ""}`;
+}
 ---
 
 <BaseLayout
-  title="Worship Albums"
-  description="Browse worship albums from Eternal Grace Music."
+  title="All releases"
+  description="Browse Eternal Grace Music albums, singles, and worship downloads by collection."
 >
-  <section class="content-page">
+  <section class="content-page release-header">
     <div class="container">
-      <span class="eyebrow">Eternal Grace Music</span><h1>
-        Albums and singles.
-      </h1><p class="lead">
-        Records written to be heard in order, prayed from beginning to end, and
-        carried into worship gatherings.
+      <span class="eyebrow">Eternal Grace Music</span>
+      <h1>All products.</h1>
+      <p class="lead">
+        Albums, singles, and worship downloads organized in the same collections
+        as the original music catalog.
       </p>
     </div>
   </section>
-  <section class="container section-shell">
+
+  <section class="container section-shell release-catalog">
+    <div class="catalog-toolbar">
+      <nav class="catalog-filters" aria-label="Browse collections">
+        {
+          sourceCollections.map((collection) => (
+            <a
+              class:list={[
+                "chip",
+                activeCollection === collection.slug && "active",
+              ]}
+              href={collectionHref(collection.slug)}
+              aria-current={
+                activeCollection === collection.slug ? "page" : undefined
+              }
+            >
+              {collection.label}
+            </a>
+          ))
+        }
+      </nav>
+      <p class="catalog-result-meta">
+        {releaseEntries.length}
+        {releaseEntries.length === 1 ? "release" : "releases"}
+      </p>
+    </div>
+
     {
-      albums.length ? (
+      pageEntries.length ? (
         <div class="catalog-grid">
-          {albums.map((album) => (
-            <AlbumCard album={album} />
-          ))}
+          {pageEntries.map((entry) =>
+            entry.type === "album" ? (
+              <AlbumCard album={entry.item} />
+            ) : (
+              <ProductCard product={entry.item} />
+            ),
+          )}
         </div>
       ) : (
         <EmptyState
-          title="No albums are published yet."
-          message="The music catalog will appear here after the first record is reviewed and published."
+          title="Nothing is published in this collection yet."
+          message="New releases will appear here after their artwork and downloads are ready."
+          actionHref="/resources"
+          actionLabel="Browse resources"
         />
+      )
+    }
+
+    {
+      totalPages > 1 && (
+        <nav class="catalog-pagination" aria-label="Product pages">
+          {currentPage > 1 ? (
+            <a
+              class="chip"
+              href={collectionHref(activeCollection, currentPage - 1)}
+            >
+              ← Previous
+            </a>
+          ) : (
+            <span class="chip is-disabled" aria-hidden="true">
+              ← Previous
+            </span>
+          )}
+          <span aria-current="page">
+            Page {currentPage} of {totalPages}
+          </span>
+          {currentPage < totalPages ? (
+            <a
+              class="chip"
+              href={collectionHref(activeCollection, currentPage + 1)}
+            >
+              Next →
+            </a>
+          ) : (
+            <span class="chip is-disabled" aria-hidden="true">
+              Next →
+            </span>
+          )}
+        </nav>
       )
     }
   </section>

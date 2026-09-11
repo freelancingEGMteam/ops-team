@@ -1,4 +1,9 @@
 import { createPublicServerClient } from "./supabase";
+import {
+  collectionLabel,
+  collectionsForProduct,
+  type CollectionKey,
+} from "./collections";
 import type { Album, Episode, Product, Track } from "@/types/domain";
 
 interface PublicMediaReference {
@@ -19,6 +24,8 @@ export type CatalogEpisode = Episode & {
 export type CatalogProduct = Product & {
   cover_url: string | null;
   cover_alt: string | null;
+  collections: CollectionKey[];
+  collection_labels: string[];
 };
 
 export interface CatalogSnapshot {
@@ -67,10 +74,13 @@ function episodeRow(row: any): CatalogEpisode {
 
 function productRow(row: any): CatalogProduct {
   const cover = mediaReference(row.cover);
+  const collections = collectionsForProduct(row as Product);
   return {
     ...row,
     cover_url: publicMediaUrl(cover),
     cover_alt: cover?.alt_text || null,
+    collections,
+    collection_labels: collections.map(collectionLabel),
   };
 }
 
