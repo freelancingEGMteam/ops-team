@@ -36,6 +36,25 @@ Deno.serve(async (req) => {
       .eq("status", "published");
     if (!products || products.length !== cartItems.length)
       return json(req, { error: "One or more products are unavailable" }, 409);
+    const { data: productItems } = await admin
+      .from("product_items")
+      .select("product_id")
+      .in(
+        "product_id",
+        products.map((product) => product.id),
+      );
+    const productsWithDownloads = new Set(
+      (productItems || []).map((item) => item.product_id),
+    );
+    if (productsWithDownloads.size !== products.length)
+      return json(
+        req,
+        {
+          error:
+            "One or more products are visible in the catalog but their downloadable files are still being prepared.",
+        },
+        409,
+      );
     if (
       products.some(
         (product) =>

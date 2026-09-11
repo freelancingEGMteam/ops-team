@@ -33,7 +33,14 @@ const { product } = Astro.props;
       <p>
         {product.description || "A digital resource from Eternal Grace Hub."}
       </p>
-      <strong class="price">{formatMoney(product.price_cents)}</strong>
+      <div class="product-card-meta">
+        <strong class="price">{formatMoney(product.price_cents)}</strong>
+        {
+          product.download_count > 0 ? null : (
+            <span class="product-availability">Files coming soon</span>
+          )
+        }
+      </div>
     </div>
   </a>
 </article>

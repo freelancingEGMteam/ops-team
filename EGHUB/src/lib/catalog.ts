@@ -24,6 +24,7 @@ export type CatalogEpisode = Episode & {
 export type CatalogProduct = Product & {
   cover_url: string | null;
   cover_alt: string | null;
+  download_count: number;
   collections: CollectionKey[];
   collection_labels: string[];
 };
@@ -74,11 +75,13 @@ function episodeRow(row: any): CatalogEpisode {
 
 function productRow(row: any): CatalogProduct {
   const cover = mediaReference(row.cover);
+  const downloadCount = Array.isArray(row.items) ? row.items.length : 0;
   const collections = collectionsForProduct(row as Product);
   return {
     ...row,
     cover_url: publicMediaUrl(cover),
     cover_alt: cover?.alt_text || null,
+    download_count: downloadCount,
     collections,
     collection_labels: collections.map(collectionLabel),
   };
@@ -106,7 +109,7 @@ export async function getCatalog(): Promise<CatalogSnapshot> {
     supabase
       .from("products")
       .select(
-        "*,cover:media_assets!products_cover_asset_id_fkey(bucket,path,alt_text)",
+        "*,cover:media_assets!products_cover_asset_id_fkey(bucket,path,alt_text),items:product_items(id)",
       )
       .eq("status", "published")
       .order("published_at", { ascending: false }),
@@ -162,7 +165,7 @@ export async function getProduct(slug: string): Promise<CatalogProduct | null> {
   const { data } = await supabase
     .from("products")
     .select(
-      "*,cover:media_assets!products_cover_asset_id_fkey(bucket,path,alt_text)",
+      "*,cover:media_assets!products_cover_asset_id_fkey(bucket,path,alt_text),items:product_items(id)",
     )
     .eq("slug", slug)
     .eq("status", "published")

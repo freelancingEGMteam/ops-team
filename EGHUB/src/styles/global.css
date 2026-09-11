@@ -280,6 +280,22 @@ body {
   color: var(--gold-bright);
   font-size: 1.2rem;
 }
+.product-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin-top: 18px;
+}
+.product-card-meta .price {
+  margin-top: 0;
+}
+.product-availability {
+  color: var(--ink-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .empty-state {
   padding: 48px 24px;
   text-align: center;

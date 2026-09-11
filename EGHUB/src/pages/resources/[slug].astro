@@ -49,7 +49,11 @@ const productStructuredData: Record<string, unknown> = {
         </p>
         <strong class="product-price">{formatMoney(product.price_cents)}</strong
         >
-        <ProductPurchase client:load product={product} />
+        <ProductPurchase
+          client:load
+          product={product}
+          downloadCount={product.download_count}
+        />
       </div>
     </div>
   </section>

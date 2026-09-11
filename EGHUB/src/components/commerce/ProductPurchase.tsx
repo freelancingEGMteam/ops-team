@@ -3,9 +3,16 @@ import type { Product } from "@/types/domain";
 import { addProduct } from "@/lib/cart";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 
-export default function ProductPurchase({ product }: { product: Product }) {
+export default function ProductPurchase({
+  product,
+  downloadCount = 0,
+}: {
+  product: Product;
+  downloadCount?: number;
+}) {
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
+  const hasDownloads = downloadCount > 0;
 
   async function claimFree() {
     const supabase = getSupabaseBrowserClient();
@@ -32,7 +39,17 @@ export default function ProductPurchase({ product }: { product: Product }) {
 
   return (
     <div className="purchase-actions">
-      {product.price_cents === 0 ? (
+      {!hasDownloads ? (
+        <>
+          <button className="btn btn-ghost" type="button" disabled>
+            Files coming soon
+          </button>
+          <span>
+            This release is public in the catalog while its downloadable files
+            are being prepared.
+          </span>
+        </>
+      ) : product.price_cents === 0 ? (
         <button
           className="btn btn-solid"
           type="button"
