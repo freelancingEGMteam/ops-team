@@ -1,3 +1,4 @@
+import { z } from "npm:zod@4.5.4";
 import {
   functionError,
   handleOptions,
@@ -7,35 +8,39 @@ import {
 import { requireUser } from "../_shared/auth.ts";
 import { fulfillOrder } from "../_shared/orders.ts";
 
+const bodySchema = z.object({ variantId: z.string().uuid() });
+
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
   try {
     const { user, admin } = await requireUser(req);
-    const { productId } = await readJson<{ productId: string }>(req);
-    const { data: product } = await admin
-      .from("products")
-      .select("*")
-      .eq("id", productId)
-      .eq("status", "published")
+    const { variantId } = await readJson(req, bodySchema);
+    const { data: variant } = await admin
+      .from("product_variants")
+      .select("*,products!inner(title,status)")
+      .eq("id", variantId)
+      .eq("is_active", true)
       .eq("price_cents", 0)
+      .eq("products.status", "published")
       .single();
-    if (!product) return json(req, { error: "Free product not found" }, 404);
+    if (!variant) return json(req, { error: "Free product not found" }, 404);
     const { data: prior } = await admin
       .from("order_items")
       .select("order_id,orders!inner(user_id,status)")
-      .eq("product_id", product.id)
+      .eq("variant_id", variant.id)
       .eq("orders.user_id", user.id)
       .eq("orders.status", "paid")
       .limit(1)
       .maybeSingle();
     if (prior) return json(req, { orderId: prior.order_id, existing: true });
+    const title = variant.label
+      ? `${(variant as any).products.title} — ${variant.label}`
+      : (variant as any).products.title;
     const order = await fulfillOrder(admin, {
       userId: user.id,
       email: user.email!,
-      products: [
-        { id: product.id, title: product.title, price_cents: 0, quantity: 1 },
-      ],
+      variants: [{ id: variant.id, title, price_cents: 0, quantity: 1 }],
       subtotalCents: 0,
       taxCents: 0,
       totalCents: 0,

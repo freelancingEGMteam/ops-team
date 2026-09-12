@@ -1,5 +1,5 @@
 begin;
-select plan(57);
+select plan(58);
 
 select has_table('public', 'profiles', 'profiles exists');
 select has_table('public', 'download_entitlements', 'download entitlements exist');
@@ -13,7 +13,8 @@ select has_function('public', 'can_write_content', 'publishing permission helper
 select row_security_active('public', table_name, table_name || ' RLS is active')
 from unnest(array[
   'profiles', 'admin_invites', 'media_assets', 'albums', 'tracks', 'episodes',
-  'episode_chapters', 'episode_themes', 'products', 'product_items', 'carts',
+  'episode_chapters', 'episode_themes', 'products', 'product_variants',
+  'product_items', 'carts',
   'cart_items', 'orders', 'order_items', 'download_entitlements', 'download_events',
   'refunds', 'refund_items', 'contact_messages', 'newsletter_subscribers',
   'site_settings', 'webhook_events', 'audit_log'
@@ -41,16 +42,19 @@ insert into public.albums(id, slug, title, status, published_at, cover_asset_id)
   ('71000000-0000-0000-0000-000000000002', 'draft-album', 'Draft album', 'draft', null, null);
 insert into public.albums(id, slug, title, status, scheduled_for) values
   ('71000000-0000-0000-0000-000000000003', 'scheduled-album', 'Scheduled album', 'scheduled', now() - interval '1 minute');
-insert into public.products(id, slug, title, kind, price_cents, status, published_at) values
-  ('72000000-0000-0000-0000-000000000001', 'free-resource', 'Free resource', 'free', 0, 'published', now() - interval '1 day'),
-  ('72000000-0000-0000-0000-000000000002', 'draft-resource', 'Draft resource', 'free', 0, 'draft', null);
-insert into public.product_items(product_id, media_asset_id) values
-  ('72000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002');
+insert into public.products(id, slug, title, status, published_at) values
+  ('72000000-0000-0000-0000-000000000001', 'free-resource', 'Free resource', 'published', now() - interval '1 day'),
+  ('72000000-0000-0000-0000-000000000002', 'draft-resource', 'Draft resource', 'draft', null);
+insert into public.product_variants(id, product_id, kind, price_cents) values
+  ('72500000-0000-0000-0000-000000000001', '72000000-0000-0000-0000-000000000001', 'free', 0),
+  ('72500000-0000-0000-0000-000000000002', '72000000-0000-0000-0000-000000000002', 'free', 0);
+insert into public.product_items(variant_id, media_asset_id) values
+  ('72500000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002');
 insert into public.orders(id, order_number, user_id, email, status) values
   ('73000000-0000-0000-0000-000000000001', 'EGH-TEST-1', '50000000-0000-0000-0000-000000000005', 'customer-one@example.test', 'paid'),
   ('73000000-0000-0000-0000-000000000002', 'EGH-TEST-2', '60000000-0000-0000-0000-000000000006', 'customer-two@example.test', 'paid');
-insert into public.order_items(id, order_id, product_id, title_snapshot, price_cents_snapshot) values
-  ('74000000-0000-0000-0000-000000000001', '73000000-0000-0000-0000-000000000001', '72000000-0000-0000-0000-000000000001', 'Free resource', 0);
+insert into public.order_items(id, order_id, variant_id, title_snapshot, price_cents_snapshot) values
+  ('74000000-0000-0000-0000-000000000001', '73000000-0000-0000-0000-000000000001', '72500000-0000-0000-0000-000000000001', 'Free resource', 0);
 insert into public.download_entitlements(id, user_id, order_item_id, media_asset_id) values
   ('75000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000005', '74000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002');
 insert into public.site_settings(key, value, is_public) values

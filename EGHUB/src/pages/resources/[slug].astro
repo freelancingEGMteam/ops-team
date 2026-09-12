@@ -1,20 +1,36 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ProductPurchase from "@/components/commerce/ProductPurchase";
-import { formatMoney, getProduct } from "@/lib/catalog";
+import { formatPriceRange, getProduct, variantKindLabel } from "@/lib/catalog";
 const { slug } = Astro.params;
 const product = slug ? await getProduct(slug) : null;
 if (!product) return Astro.redirect("/404");
+
+const activeVariants = product.variants.filter((variant) => variant.is_active);
+const eyebrow =
+  product.collection_labels[0] ||
+  product.tag ||
+  activeVariants[0]?.kind.replaceAll("_", " ") ||
+  "Digital resource";
+const aboutBullets = [
+  ...new Set(activeVariants.map((variant) => variantKindLabel(variant.kind))),
+];
+const inStock = product.download_count > 0;
+
 const productStructuredData: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: product.title,
   description: product.description,
   offers: {
-    "@type": "Offer",
-    price: (product.price_cents / 100).toFixed(2),
+    "@type": "AggregateOffer",
     priceCurrency: "USD",
-    availability: "https://schema.org/InStock",
+    lowPrice: (product.starting_price_cents / 100).toFixed(2),
+    highPrice: (product.max_price_cents / 100).toFixed(2),
+    offerCount: activeVariants.length,
+    availability: inStock
+      ? "https://schema.org/InStock"
+      : "https://schema.org/PreOrder",
   },
 };
 ---
@@ -28,49 +44,103 @@ const productStructuredData: Record<string, unknown> = {
   structuredData={productStructuredData}
 >
   <section class="content-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/resources">Worship</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{product.title}</span>
+      </nav>
+    </div>
     <div class="container product-detail">
-      <div class="product-detail-art">
-        {
-          product.cover_url ? (
-            <img
-              src={product.cover_url}
-              alt={product.cover_alt || `${product.title} artwork`}
-            />
-          ) : (
-            <span aria-hidden="true">↓</span>
-          )
-        }
-      </div>
-      <div>
-        <span class="eyebrow">{product.kind.replaceAll("_", " ")}</span>
+      <div class="product-detail-main">
+        <div class="product-detail-art">
+          {
+            product.cover_url ? (
+              <img
+                src={product.cover_url}
+                alt={product.cover_alt || `${product.title} artwork`}
+              />
+            ) : (
+              <span aria-hidden="true">↓</span>
+            )
+          }
+        </div>
+        <span class="eyebrow">{eyebrow}</span>
         <h1>{product.title}</h1>
         <p class="lead">
           {product.description || "A digital resource from Eternal Grace Hub."}
         </p>
-        <strong class="product-price">{formatMoney(product.price_cents)}</strong
-        >
-        <ProductPurchase
-          client:load
-          product={product}
-          downloadCount={product.download_count}
-        />
+        {
+          aboutBullets.length > 0 && (
+            <div class="about-item">
+              <h2>About this item</h2>
+              <ul>
+                {aboutBullets.map((bullet) => (
+                  <li>{bullet}</li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
       </div>
+      <aside class="buy-box panel">
+        <span class="eyebrow">Price</span>
+        <strong class="product-price">
+          {
+            formatPriceRange(
+              product.starting_price_cents,
+              product.max_price_cents,
+            )
+          }
+        </strong>
+        <p class={`buy-box-availability ${inStock ? "in-stock" : "pending"}`}>
+          {inStock ? "✓ In stock — instant download" : "Files being prepared"}
+        </p>
+        <ProductPurchase client:load product={product} />
+        <ul class="buy-box-assurances">
+          <li>Instant digital download after purchase</li>
+          <li>Secure checkout, tax calculated automatically</li>
+          <li>Files available anytime from your account</li>
+        </ul>
+      </aside>
     </div>
   </section>
 </BaseLayout>
 <style>
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+  }
+  .breadcrumb a {
+    color: var(--ink-soft);
+  }
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+  .breadcrumb [aria-current] {
+    color: var(--ink-dim);
+  }
   .product-detail {
     display: grid;
-    grid-template-columns: minmax(260px, 480px) 1fr;
-    gap: 56px;
-    align-items: center;
+    grid-template-columns: 1fr 380px;
+    gap: 40px;
+    align-items: start;
+    margin-top: 16px;
   }
   .product-detail-art {
     aspect-ratio: 1;
+    max-width: 480px;
     display: grid;
     place-items: center;
     border: 1px solid var(--line);
     border-radius: 10px;
+    margin-bottom: 24px;
     background:
       radial-gradient(
         circle at 65% 35%,
@@ -81,20 +151,65 @@ const productStructuredData: Record<string, unknown> = {
     color: var(--gold);
     font-size: 6rem;
   }
-  .product-price {
-    display: block;
-    margin-top: 24px;
-    color: var(--gold-bright);
-    font-size: 1.8rem;
-  }
   .product-detail-art img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 10px;
   }
-  @media (max-width: 760px) {
+  .about-item {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .about-item h2 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  .about-item ul {
+    display: grid;
+    gap: 6px;
+    padding-left: 20px;
+    color: var(--ink-dim);
+  }
+  .buy-box {
+    position: sticky;
+    top: 98px;
+    align-self: start;
+    padding: 24px;
+  }
+  .product-price {
+    display: block;
+    margin-top: 6px;
+    color: var(--gold-bright);
+    font-size: 1.8rem;
+  }
+  .buy-box-availability {
+    margin-top: 10px;
+    font-size: 0.85rem;
+  }
+  .buy-box-availability.in-stock {
+    color: var(--green);
+  }
+  .buy-box-availability.pending {
+    color: var(--ink-soft);
+  }
+  .buy-box-assurances {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 1050px) {
     .product-detail {
       grid-template-columns: 1fr;
+    }
+    .buy-box {
+      position: static;
     }
   }
 </style>

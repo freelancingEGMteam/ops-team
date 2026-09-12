@@ -12,7 +12,7 @@ export async function fulfillOrder(
   input: {
     userId: string;
     email: string;
-    products: Array<{
+    variants: Array<{
       id: string;
       title: string;
       price_cents: number;
@@ -25,48 +25,63 @@ export async function fulfillOrder(
     stripePaymentIntentId?: string | null;
   },
 ) {
+  // Resumable by design: a retry after a partial failure (crash mid-loop,
+  // duplicate webhook delivery, concurrent async_payment_succeeded) must not
+  // duplicate order rows, order_items, entitlements, or receipt emails. The
+  // order lookup + the order_items upsert (unique on order_id, variant_id)
+  // together make every step below safe to re-run for the same input.
+  // deno-lint-ignore no-explicit-any
+  let order: any = null;
+  let isNewOrder = false;
   if (input.stripeSessionId) {
     const { data: existing } = await admin
       .from("orders")
       .select("*")
       .eq("stripe_checkout_session_id", input.stripeSessionId)
       .maybeSingle();
-    if (existing) return existing;
+    order = existing ?? null;
   }
-  const { data: order, error: orderError } = await admin
-    .from("orders")
-    .insert({
-      order_number: orderNumber(),
-      user_id: input.userId,
-      email: input.email,
-      status: "paid",
-      subtotal_cents: input.subtotalCents,
-      tax_cents: input.taxCents,
-      total_cents: input.totalCents,
-      currency: "usd",
-      stripe_checkout_session_id: input.stripeSessionId || null,
-      stripe_payment_intent_id: input.stripePaymentIntentId || null,
-    })
-    .select("*")
-    .single();
-  if (orderError) throw orderError;
-  for (const product of input.products) {
+  if (!order) {
+    const { data: inserted, error: orderError } = await admin
+      .from("orders")
+      .insert({
+        order_number: orderNumber(),
+        user_id: input.userId,
+        email: input.email,
+        status: "paid",
+        subtotal_cents: input.subtotalCents,
+        tax_cents: input.taxCents,
+        total_cents: input.totalCents,
+        currency: "usd",
+        stripe_checkout_session_id: input.stripeSessionId || null,
+        stripe_payment_intent_id: input.stripePaymentIntentId || null,
+      })
+      .select("*")
+      .single();
+    if (orderError) throw orderError;
+    order = inserted;
+    isNewOrder = true;
+  }
+  for (const variant of input.variants) {
     const { data: item, error: itemError } = await admin
       .from("order_items")
-      .insert({
-        order_id: order.id,
-        product_id: product.id,
-        title_snapshot: product.title,
-        price_cents_snapshot: product.price_cents,
-        quantity: product.quantity,
-      })
+      .upsert(
+        {
+          order_id: order.id,
+          variant_id: variant.id,
+          title_snapshot: variant.title,
+          price_cents_snapshot: variant.price_cents,
+          quantity: variant.quantity,
+        },
+        { onConflict: "order_id,variant_id" },
+      )
       .select("*")
       .single();
     if (itemError) throw itemError;
     const { data: assets, error: assetsError } = await admin
       .from("product_items")
       .select("media_asset_id")
-      .eq("product_id", product.id);
+      .eq("variant_id", variant.id);
     if (assetsError) throw assetsError;
     if (assets?.length) {
       const { error } = await admin.from("download_entitlements").upsert(
@@ -80,6 +95,7 @@ export async function fulfillOrder(
       if (error) throw error;
     }
   }
+  if (!isNewOrder) return order;
   await audit(admin, input.userId, "order.fulfilled", "orders", order.id, {
     stripeSessionId: input.stripeSessionId || null,
   });

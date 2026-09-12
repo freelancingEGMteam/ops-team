@@ -22,12 +22,34 @@ Deno.serve(async (req) => {
     return new Response("Invalid signature", { status: 400 });
   }
   const admin = adminClient();
-  const { data: processed } = await admin
+  // Atomically claim this event id before doing any work: INSERT ... ON
+  // CONFLICT DO NOTHING via ignoreDuplicates, then check whether our row was
+  // the one that landed. This closes the race where two concurrent
+  // deliveries of the same event (Stripe does retry/duplicate delivery) both
+  // read "not yet processed" and both fulfill the order. If processing below
+  // throws, the claim is released in the catch block so Stripe's retry can
+  // actually succeed later instead of being swallowed as a false duplicate.
+  const { data: claimed, error: claimError } = await admin
     .from("webhook_events")
-    .select("id")
-    .eq("id", event.id)
-    .maybeSingle();
-  if (processed) return Response.json({ received: true, duplicate: true });
+    .upsert(
+      {
+        id: event.id,
+        provider: "stripe",
+        event_type: event.type,
+        payload: event as unknown as Record<string, unknown>,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    )
+    .select("id");
+  if (claimError) {
+    console.error("Failed to claim webhook event", {
+      eventId: event.id,
+      claimError,
+    });
+    return new Response("Claim failed", { status: 500 });
+  }
+  if (!claimed?.length)
+    return Response.json({ received: true, duplicate: true });
   try {
     if (
       event.type === "checkout.session.completed" ||
@@ -95,18 +117,15 @@ Deno.serve(async (req) => {
         }
       }
     }
-    await admin.from("webhook_events").insert({
-      id: event.id,
-      provider: "stripe",
-      event_type: event.type,
-      payload: event as unknown as Record<string, unknown>,
-    });
     return Response.json({ received: true });
   } catch (error) {
     console.error("Stripe webhook processing failed", {
       eventId: event.id,
       error,
     });
+    // Release the claim so Stripe's automatic retry of this same event id
+    // isn't silently dropped as a duplicate — it genuinely wasn't processed.
+    await admin.from("webhook_events").delete().eq("id", event.id);
     return new Response("Processing failed", { status: 500 });
   }
 });
@@ -120,27 +139,31 @@ async function fulfillSession(
   if (!userId || !cartId) throw new Error("Checkout metadata is incomplete");
   const { data: cartItems } = await admin
     .from("cart_items")
-    .select("product_id,quantity")
+    .select("variant_id,quantity")
     .eq("cart_id", cartId);
   if (!cartItems?.length) throw new Error("Checkout cart is empty");
-  const { data: products } = await admin
-    .from("products")
-    .select("id,title,price_cents")
+  const { data: variants } = await admin
+    .from("product_variants")
+    .select("id,label,price_cents,products(title)")
     .in(
       "id",
-      cartItems.map((item) => item.product_id),
+      cartItems.map((item) => item.variant_id),
     );
-  if (!products || products.length !== cartItems.length)
+  if (!variants || variants.length !== cartItems.length)
     throw new Error("Checkout products are missing");
   const quantities = new Map(
-    cartItems.map((item) => [item.product_id, item.quantity]),
+    cartItems.map((item) => [item.variant_id, item.quantity]),
   );
-  const productLines = products.map((product) => ({
-    ...product,
-    quantity: quantities.get(product.id) || 1,
+  const variantLines = variants.map((variant: any) => ({
+    id: variant.id,
+    title: variant.label
+      ? `${variant.products?.title} — ${variant.label}`
+      : (variant.products?.title as string),
+    price_cents: variant.price_cents as number,
+    quantity: quantities.get(variant.id) || 1,
   }));
-  const subtotal = productLines.reduce(
-    (sum, product) => sum + product.price_cents * product.quantity,
+  const subtotal = variantLines.reduce(
+    (sum, variant) => sum + variant.price_cents * variant.quantity,
     0,
   );
   const paymentIntent =
@@ -155,7 +178,7 @@ async function fulfillSession(
   await fulfillOrder(admin, {
     userId,
     email: profile?.email || session.customer_details?.email || "",
-    products: productLines,
+    variants: variantLines,
     subtotalCents: subtotal,
     taxCents: session.total_details?.amount_tax || 0,
     totalCents: session.amount_total || subtotal,

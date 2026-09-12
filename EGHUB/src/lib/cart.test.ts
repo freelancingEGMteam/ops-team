@@ -1,76 +1,74 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Product } from "@/types/domain";
 import {
-  addProduct,
+  addVariant,
   cartTotal,
   clearCart,
   readCart,
-  removeProduct,
+  removeVariant,
 } from "./cart";
 
-const product: Product = {
-  id: "product-1",
-  slug: "grace-album",
-  title: "Grace Album",
-  kind: "album_mp3",
-  description: null,
-  price_cents: 1299,
-  currency: "usd",
-  stripe_product_id: null,
-  stripe_price_id: null,
-  stripe_tax_code: "txcd_10000000",
-  cover_asset_id: null,
-  album_id: null,
-  track_id: null,
-  tag: null,
-  status: "published",
-  published_at: "2026-09-03T00:00:00.000Z",
-  scheduled_for: null,
-  created_at: "2026-09-03T00:00:00.000Z",
-  updated_at: "2026-09-03T00:00:00.000Z",
-};
+const product = { slug: "grace-album", title: "Grace Album" };
+const variant = { id: "variant-1", price_cents: 1299, label: "MP3 Album" };
 
 describe("anonymous cart", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("adds products, consolidates quantities, and calculates cents exactly", () => {
+  it("adds a variant once and calculates cents exactly", () => {
     const listener = vi.fn();
     window.addEventListener("egh-cart-changed", listener);
-    addProduct(product);
-    addProduct(product);
+    addVariant(product, variant);
     expect(readCart()).toEqual([
       {
-        productId: "product-1",
-        slug: "grace-album",
-        title: "Grace Album",
+        variantId: "variant-1",
+        productSlug: "grace-album",
+        productTitle: "Grace Album",
+        variantLabel: "MP3 Album",
         priceCents: 1299,
-        quantity: 2,
+        quantity: 1,
       },
     ]);
-    expect(cartTotal(readCart())).toBe(2598);
-    expect(listener).toHaveBeenCalledTimes(2);
+    expect(cartTotal(readCart())).toBe(1299);
+    expect(listener).toHaveBeenCalledTimes(1);
     window.removeEventListener("egh-cart-changed", listener);
   });
 
-  it("removes one product without touching the rest", () => {
-    addProduct(product);
-    addProduct({
-      ...product,
-      id: "product-2",
-      slug: "lyrics",
-      title: "Lyrics",
+  it("adding an already-in-cart variant again is a no-op, not a quantity bump", () => {
+    expect(addVariant(product, variant)).toBe(true);
+    expect(addVariant(product, variant)).toBe(false);
+    expect(readCart()).toHaveLength(1);
+    expect(readCart()[0].quantity).toBe(1);
+  });
+
+  it("keeps two variants of the same product as separate lines", () => {
+    addVariant(product, variant);
+    addVariant(product, {
+      id: "variant-2",
       price_cents: 499,
+      label: "Chord Book",
     });
-    removeProduct("product-1");
-    expect(readCart().map((line) => line.productId)).toEqual(["product-2"]);
+    expect(readCart().map((line) => line.variantId)).toEqual([
+      "variant-1",
+      "variant-2",
+    ]);
+  });
+
+  it("removes one variant without touching the rest", () => {
+    addVariant(product, variant);
+    addVariant(product, {
+      id: "variant-2",
+      price_cents: 499,
+      label: "Chord Book",
+    });
+    removeVariant("variant-1");
+    expect(readCart().map((line) => line.variantId)).toEqual(["variant-2"]);
     clearCart();
     expect(readCart()).toEqual([]);
   });
 
   it("recovers from corrupt local storage", () => {
-    localStorage.setItem("egh-cart-v2", "not-json");
+    localStorage.setItem("egh-cart-v3", "not-json");
     expect(readCart()).toEqual([]);
   });
 });

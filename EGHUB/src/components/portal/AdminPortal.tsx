@@ -166,9 +166,7 @@ function AdminRoute({
       <ContentAdmin kind="episodes" profile={profile} supabase={supabase} />
     );
   if (section === "products")
-    return (
-      <ContentAdmin kind="products" profile={profile} supabase={supabase} />
-    );
+    return <ProductsAdmin profile={profile} supabase={supabase} />;
   if (section === "orders") return <OrdersAdmin supabase={supabase} />;
   if (section === "customers")
     return (
@@ -273,7 +271,7 @@ function Overview({
   );
 }
 
-type ContentKind = "albums" | "tracks" | "episodes" | "products";
+type ContentKind = "albums" | "tracks" | "episodes";
 const contentConfig = {
   albums: {
     title: "Albums",
@@ -312,21 +310,6 @@ const contentConfig = {
       is_featured: false,
     },
   },
-  products: {
-    title: "Products",
-    description:
-      "Build downloadable products and synchronize approved prices with Stripe.",
-    defaults: {
-      title: "",
-      slug: "",
-      description: "",
-      kind: "bundle",
-      price_cents: 0,
-      currency: "usd",
-      stripe_tax_code: "txcd_10202000",
-      status: "draft",
-    },
-  },
 } as const;
 
 function ContentAdmin({
@@ -356,35 +339,14 @@ function ContentAdmin({
       });
   useEffect(load, [kind, supabase]);
   async function edit(row: any) {
-    let next = { ...row };
-    if (kind === "products") {
-      const { data } = await supabase
-        .from("product_items")
-        .select("media_asset_id")
-        .eq("product_id", row.id);
-      next = {
-        ...next,
-        media_asset_ids: (data || [])
-          .map((item) => item.media_asset_id)
-          .join(", "),
-      };
-    }
     setEditing(row.id);
-    setDraft(next);
+    setDraft({ ...row });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setMessage("");
     const payload = { ...draft };
-    const mediaAssetIds =
-      kind === "products"
-        ? String(payload.media_asset_ids || "")
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean)
-        : [];
-    delete payload.media_asset_ids;
     delete payload.id;
     delete payload.created_at;
     delete payload.updated_at;
@@ -424,32 +386,6 @@ function ContentAdmin({
         return setMessage(
           "Attach a public poster and video before releasing an episode.",
         );
-      if (kind === "products" && !payload.cover_asset_id)
-        return setMessage("Attach public product artwork before release.");
-      if (
-        kind === "products" &&
-        Number(payload.price_cents) > 0 &&
-        !payload.stripe_price_id
-      )
-        return setMessage(
-          "Save as a draft and sync Stripe before releasing a paid product.",
-        );
-      if (
-        kind === "products" &&
-        payload.kind !== "donation" &&
-        !mediaAssetIds.length
-      )
-        return setMessage(
-          "Attach at least one protected deliverable before releasing this product.",
-        );
-    }
-    if (
-      kind === "products" &&
-      Number(payload.price_cents) > 0 &&
-      !payload.stripe_tax_code
-    ) {
-      setMessage("A Stripe tax code is required before saving a paid product.");
-      return;
     }
     const result = editing
       ? await supabase
@@ -462,24 +398,6 @@ function ContentAdmin({
     if (result.error) {
       setMessage(result.error.message);
       return;
-    }
-    if (kind === "products" && result.data?.id) {
-      const { error: removeItemsError } = await supabase
-        .from("product_items")
-        .delete()
-        .eq("product_id", result.data.id);
-      if (removeItemsError) return setMessage(removeItemsError.message);
-      if (mediaAssetIds.length) {
-        const { error: itemError } = await supabase
-          .from("product_items")
-          .insert(
-            mediaAssetIds.map((mediaAssetId) => ({
-              product_id: result.data.id,
-              media_asset_id: mediaAssetId,
-            })),
-          );
-        if (itemError) return setMessage(itemError.message);
-      }
     }
     setDraft({ ...config.defaults });
     setEditing(null);
@@ -495,13 +413,6 @@ function ContentAdmin({
       return;
     const { error } = await supabase.from(kind).delete().eq("id", id);
     setMessage(error?.message || "Deleted.");
-    load();
-  }
-  async function syncStripe(id: string) {
-    const { error } = await supabase.functions.invoke("sync-stripe-product", {
-      body: { productId: id },
-    });
-    setMessage(error?.message || "Stripe product synchronized.");
     load();
   }
   return (
@@ -599,7 +510,9 @@ function ContentAdmin({
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <td data-label="Title">{row.title}</td>
-                    <td data-label="Slug / parent">{row.slug || row.album_id || "—"}</td>
+                    <td data-label="Slug / parent">
+                      {row.slug || row.album_id || "—"}
+                    </td>
                     <td data-label="Status">
                       <span className="status-pill">{row.status}</span>
                     </td>
@@ -614,7 +527,575 @@ function ContentAdmin({
                           ["draft", "review"].includes(row.status)) && (
                           <button onClick={() => void edit(row)}>Edit</button>
                         )}
-                        {kind === "products" && canPublish(profile.role) && (
+                        {(canPublish(profile.role) ||
+                          ["draft", "review"].includes(row.status)) && (
+                          <button
+                            className="button-danger"
+                            onClick={() => void remove(row.id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>No records yet.</p>
+        )}
+      </section>
+      <style>{`.admin-record-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-record-form .wide{grid-column:1/-1}.admin-record-form>.button-row{grid-column:1/-1}@media(max-width:700px){.admin-record-form{grid-template-columns:1fr}.admin-record-form .wide{grid-column:auto}}`}</style>
+    </>
+  );
+}
+
+interface VariantDraft {
+  id?: string;
+  label: string;
+  kind: string;
+  price_cents: number;
+  is_active: boolean;
+  media_asset_ids: string;
+  stripe_price_id?: string | null;
+}
+
+const productDefaults = {
+  title: "",
+  slug: "",
+  description: "",
+  tag: "",
+  cover_asset_id: "",
+  album_id: "",
+  track_id: "",
+  stripe_tax_code: "txcd_10202000",
+  status: "draft",
+};
+
+const variantKinds = [
+  "bundle",
+  "album_mp3",
+  "album_chords",
+  "album_lyrics",
+  "track_mp3",
+  "track_chords",
+  "free",
+  "donation",
+];
+
+function emptyVariant(): VariantDraft {
+  return {
+    label: "",
+    kind: "bundle",
+    price_cents: 0,
+    is_active: true,
+    media_asset_ids: "",
+    stripe_price_id: null,
+  };
+}
+
+function ProductsAdmin({
+  profile,
+  supabase,
+}: {
+  profile: Profile;
+  supabase: Client;
+}) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [draft, setDraft] = useState<any>({ ...productDefaults });
+  const [variants, setVariants] = useState<VariantDraft[]>([emptyVariant()]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+
+  const load = () =>
+    void supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) setMessage(error.message);
+        else setRows((data || []) as any[]);
+      });
+  useEffect(load, [supabase]);
+
+  async function edit(row: any) {
+    const { data } = await supabase
+      .from("product_variants")
+      .select("*, product_items(media_asset_id)")
+      .eq("product_id", row.id)
+      .order("sort_order");
+    setVariants(
+      data?.length
+        ? data.map((variant: any) => ({
+            id: variant.id,
+            label: variant.label || "",
+            kind: variant.kind,
+            price_cents: variant.price_cents,
+            is_active: variant.is_active,
+            stripe_price_id: variant.stripe_price_id,
+            media_asset_ids: (variant.product_items || [])
+              .map((item: any) => item.media_asset_id)
+              .join(", "),
+          }))
+        : [emptyVariant()],
+    );
+    setEditing(row.id);
+    setDraft({ ...row });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function addVariantRow() {
+    setVariants((current) => [...current, emptyVariant()]);
+  }
+  function updateVariantRow(index: number, patch: Partial<VariantDraft>) {
+    setVariants((current) =>
+      current.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+  }
+  function removeVariantRow(index: number) {
+    setVariants((current) => current.filter((_, i) => i !== index));
+  }
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage("");
+    const payload = { ...draft };
+    delete payload.id;
+    delete payload.created_at;
+    delete payload.updated_at;
+    if (payload.status === "published" && !canPublish(profile.role)) {
+      payload.status = "review";
+      setMessage(
+        "Editors can submit for review; an owner or admin must publish.",
+      );
+    }
+    if (payload.status === "published") {
+      payload.published_at = payload.published_at || new Date().toISOString();
+      payload.scheduled_for = null;
+    } else if (["draft", "review"].includes(payload.status)) {
+      payload.published_at = null;
+      payload.scheduled_for = null;
+    } else if (payload.status === "archived") {
+      payload.scheduled_for = null;
+    }
+    if (payload.status === "scheduled" && !payload.scheduled_for) {
+      setMessage("Choose a future publication date before scheduling.");
+      return;
+    }
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === "") payload[key] = null;
+    });
+    if (["published", "scheduled"].includes(payload.status)) {
+      if (!payload.cover_asset_id)
+        return setMessage("Attach public product artwork before release.");
+      const hasDeliverable = variants.some(
+        (variant) =>
+          variant.kind === "donation" || variant.media_asset_ids.trim(),
+      );
+      if (!variants.length || !hasDeliverable)
+        return setMessage(
+          "Attach at least one protected deliverable to a variant before releasing this product.",
+        );
+      if (variants.some((v) => v.price_cents > 0 && !v.stripe_price_id))
+        return setMessage(
+          "Save as a draft and sync Stripe before releasing a paid variant.",
+        );
+    }
+    if (
+      variants.some((variant) => variant.price_cents > 0) &&
+      !payload.stripe_tax_code
+    ) {
+      setMessage(
+        "A Stripe tax code is required before saving a product with a paid variant.",
+      );
+      return;
+    }
+
+    const result = editing
+      ? await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", editing)
+          .select("id")
+          .single()
+      : await supabase.from("products").insert(payload).select("id").single();
+    if (result.error) {
+      setMessage(result.error.message);
+      return;
+    }
+    const productId = result.data.id as string;
+
+    // Diff variants against what exists today — unlike a product_items join
+    // row, a variant carries real weight (Stripe price history, download
+    // entitlements), so it's updated in place or deleted only when the
+    // staff member explicitly removed its row, never blindly recreated.
+    const { data: existingVariants } = await supabase
+      .from("product_variants")
+      .select("id")
+      .eq("product_id", productId);
+    const keptIds = new Set(
+      variants.filter((variant) => variant.id).map((variant) => variant.id!),
+    );
+    const removedIds = (existingVariants || [])
+      .map((variant: any) => variant.id as string)
+      .filter((id) => !keptIds.has(id));
+    if (removedIds.length) {
+      const { error } = await supabase
+        .from("product_variants")
+        .delete()
+        .in("id", removedIds);
+      if (error) return setMessage(error.message);
+    }
+
+    for (const [index, variant] of variants.entries()) {
+      const variantPayload = {
+        product_id: productId,
+        label: variant.label.trim() || null,
+        kind: variant.kind,
+        price_cents: Number(variant.price_cents) || 0,
+        is_active: variant.is_active,
+        sort_order: index,
+      };
+      const variantResult = variant.id
+        ? await supabase
+            .from("product_variants")
+            .update(variantPayload)
+            .eq("id", variant.id)
+            .select("id")
+            .single()
+        : await supabase
+            .from("product_variants")
+            .insert(variantPayload)
+            .select("id")
+            .single();
+      if (variantResult.error) {
+        setMessage(variantResult.error.message);
+        return;
+      }
+      const variantId = variantResult.data.id as string;
+      const mediaAssetIds = variant.media_asset_ids
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+      const { error: removeItemsError } = await supabase
+        .from("product_items")
+        .delete()
+        .eq("variant_id", variantId);
+      if (removeItemsError) return setMessage(removeItemsError.message);
+      if (mediaAssetIds.length) {
+        const { error: itemError } = await supabase
+          .from("product_items")
+          .insert(
+            mediaAssetIds.map((mediaAssetId) => ({
+              variant_id: variantId,
+              media_asset_id: mediaAssetId,
+            })),
+          );
+        if (itemError) return setMessage(itemError.message);
+      }
+    }
+
+    setDraft({ ...productDefaults });
+    setVariants([emptyVariant()]);
+    setEditing(null);
+    setMessage("Saved.");
+    load();
+  }
+
+  async function remove(id: string) {
+    if (
+      !window.confirm(
+        "Delete this product and all its variants? Published or referenced records may be rejected.",
+      )
+    )
+      return;
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    setMessage(error?.message || "Deleted.");
+    load();
+  }
+
+  async function syncStripe(id: string) {
+    const { error } = await supabase.functions.invoke("sync-stripe-product", {
+      body: { productId: id },
+    });
+    setMessage(error?.message || "Stripe prices synchronized.");
+    load();
+  }
+
+  return (
+    <>
+      <Heading
+        eyebrow="Catalog"
+        title="Products"
+        description="Build downloadable products with one or more purchasable variants, and synchronize approved prices with Stripe."
+      />
+      <section className="panel">
+        <h2>{editing ? "Edit product" : "New product"}</h2>
+        <form className="admin-record-form" onSubmit={save}>
+          <label className="field">
+            Title
+            <input
+              type="text"
+              required
+              value={draft.title || ""}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Slug
+            <input
+              type="text"
+              required
+              value={draft.slug || ""}
+              onChange={(e) => setDraft({ ...draft, slug: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Stripe tax code
+            <input
+              type="text"
+              value={draft.stripe_tax_code || ""}
+              onChange={(e) =>
+                setDraft({ ...draft, stripe_tax_code: e.target.value })
+              }
+            />
+          </label>
+          <label className="field">
+            Catalog tag
+            <input
+              type="text"
+              value={draft.tag || ""}
+              onChange={(e) => setDraft({ ...draft, tag: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Public artwork media ID
+            <input
+              type="text"
+              value={draft.cover_asset_id || ""}
+              onChange={(e) =>
+                setDraft({ ...draft, cover_asset_id: e.target.value })
+              }
+            />
+          </label>
+          <label className="field">
+            Related album ID
+            <input
+              type="text"
+              value={draft.album_id || ""}
+              onChange={(e) => setDraft({ ...draft, album_id: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            Related track ID
+            <input
+              type="text"
+              value={draft.track_id || ""}
+              onChange={(e) => setDraft({ ...draft, track_id: e.target.value })}
+            />
+          </label>
+          <label className="field wide">
+            Description
+            <textarea
+              value={draft.description || ""}
+              onChange={(e) =>
+                setDraft({ ...draft, description: e.target.value })
+              }
+            />
+          </label>
+          <label className="field">
+            Status
+            <select
+              value={draft.status || "draft"}
+              onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+            >
+              {publishStatuses
+                .filter(
+                  (status) =>
+                    canPublish(profile.role) ||
+                    !["published", "scheduled", "archived"].includes(status),
+                )
+                .map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {draft.status === "scheduled" && (
+            <label className="field">
+              Publish at
+              <input
+                type="datetime-local"
+                value={
+                  draft.scheduled_for
+                    ? new Date(draft.scheduled_for).toISOString().slice(0, 16)
+                    : ""
+                }
+                min={new Date().toISOString().slice(0, 16)}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    scheduled_for: event.target.value
+                      ? new Date(event.target.value).toISOString()
+                      : null,
+                  })
+                }
+                required
+              />
+            </label>
+          )}
+
+          <div className="wide variants-editor">
+            <h3>Variants</h3>
+            <p className="variants-hint">
+              Each variant is a separate purchasable option under this one
+              product page — e.g. MP3 Album, Chord Book, MP3 + Chords Bundle.
+            </p>
+            {variants.map((variant, index) => (
+              <div className="variant-row" key={variant.id || `new-${index}`}>
+                <label className="field">
+                  Label
+                  <input
+                    type="text"
+                    placeholder="e.g. MP3 + Chords Bundle"
+                    value={variant.label}
+                    onChange={(e) =>
+                      updateVariantRow(index, { label: e.target.value })
+                    }
+                  />
+                </label>
+                <label className="field">
+                  Kind
+                  <select
+                    value={variant.kind}
+                    onChange={(e) =>
+                      updateVariantRow(index, { kind: e.target.value })
+                    }
+                  >
+                    {variantKinds.map((x) => (
+                      <option key={x}>{x}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  Price (cents)
+                  <input
+                    type="number"
+                    value={variant.price_cents}
+                    onChange={(e) =>
+                      updateVariantRow(index, {
+                        price_cents: Number(e.target.value),
+                      })
+                    }
+                  />
+                </label>
+                <label className="field checkbox-field">
+                  <input
+                    type="checkbox"
+                    checked={variant.is_active}
+                    onChange={(e) =>
+                      updateVariantRow(index, { is_active: e.target.checked })
+                    }
+                  />
+                  Active
+                </label>
+                <label className="field wide">
+                  Protected deliverable media IDs (comma-separated)
+                  <textarea
+                    value={variant.media_asset_ids}
+                    onChange={(e) =>
+                      updateVariantRow(index, {
+                        media_asset_ids: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                {variant.stripe_price_id && (
+                  <p className="variant-stripe-status">
+                    Stripe price: <code>{variant.stripe_price_id}</code>
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className="button-danger"
+                  onClick={() => removeVariantRow(index)}
+                  disabled={variants.length === 1}
+                >
+                  Remove variant
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={addVariantRow}
+            >
+              + Add variant
+            </button>
+          </div>
+
+          <div className="button-row">
+            <button className="btn btn-solid" type="submit">
+              {editing ? "Save changes" : "Create"}
+            </button>
+            {editing && (
+              <button
+                className="btn btn-ghost"
+                type="button"
+                onClick={() => {
+                  setEditing(null);
+                  setDraft({ ...productDefaults });
+                  setVariants([emptyVariant()]);
+                }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+        {message && (
+          <p className="form-success" role="status">
+            {message}
+          </p>
+        )}
+      </section>
+      <section className="panel">
+        <h2>Products</h2>
+        {rows.length ? (
+          <div className="table-wrap">
+            <table className="portal-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Slug</th>
+                  <th>Status</th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td data-label="Title">{row.title}</td>
+                    <td data-label="Slug">{row.slug}</td>
+                    <td data-label="Status">
+                      <span className="status-pill">{row.status}</span>
+                    </td>
+                    <td data-label="Updated">
+                      {row.updated_at
+                        ? new Date(row.updated_at).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td data-label="Actions">
+                      <div className="button-row">
+                        {(canPublish(profile.role) ||
+                          ["draft", "review"].includes(row.status)) && (
+                          <button onClick={() => void edit(row)}>Edit</button>
+                        )}
+                        {canPublish(profile.role) && (
                           <button onClick={() => void syncStripe(row.id)}>
                             Sync Stripe
                           </button>
@@ -639,7 +1120,7 @@ function ContentAdmin({
           <p>No records yet.</p>
         )}
       </section>
-      <style>{`.admin-record-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-record-form .wide{grid-column:1/-1}.admin-record-form>.button-row{grid-column:1/-1}@media(max-width:700px){.admin-record-form{grid-template-columns:1fr}.admin-record-form .wide{grid-column:auto}}`}</style>
+      <style>{`.admin-record-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-record-form .wide{grid-column:1/-1}.admin-record-form>.button-row{grid-column:1/-1}.variants-editor{border-top:1px solid var(--line-soft);padding-top:14px;margin-top:4px}.variants-hint{color:var(--ink-soft);font-size:.85rem;margin-bottom:12px}.variant-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px;margin-bottom:12px;border:1px solid var(--line);border-radius:8px}.variant-row .wide{grid-column:1/-1}.variant-stripe-status{grid-column:1/-1;color:var(--ink-soft);font-size:.82rem}.checkbox-field{display:flex;flex-direction:row;align-items:center;gap:8px}@media(max-width:700px){.admin-record-form{grid-template-columns:1fr}.admin-record-form .wide{grid-column:auto}.variant-row{grid-template-columns:1fr}}`}</style>
     </>
   );
 }
@@ -694,46 +1175,6 @@ function ContentFields({
         {field("chord_pdf_asset_id", "Private chord PDF media ID")}
         {field("lyrics_pdf_asset_id", "Private lyrics PDF media ID")}
         {field("lyrics", "Lyrics", "textarea", true)}
-      </>
-    );
-  if (kind === "products")
-    return (
-      <>
-        {field("title", "Title")}
-        {field("slug", "Slug")}
-        <label className="field">
-          Kind
-          <select
-            value={draft.kind}
-            onChange={(e) => setDraft({ ...draft, kind: e.target.value })}
-          >
-            {[
-              "bundle",
-              "album_mp3",
-              "album_chords",
-              "album_lyrics",
-              "track_mp3",
-              "track_chords",
-              "free",
-              "donation",
-            ].map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
-        </label>
-        {field("price_cents", "Price (cents)", "number")}
-        {field("stripe_tax_code", "Stripe tax code")}
-        {field("tag", "Catalog tag")}
-        {field("cover_asset_id", "Public artwork media ID")}
-        {field("album_id", "Related album ID")}
-        {field("track_id", "Related track ID")}
-        {field(
-          "media_asset_ids",
-          "Protected deliverable media IDs (comma-separated)",
-          "textarea",
-          true,
-        )}
-        {field("description", "Description", "textarea", true)}
       </>
     );
   if (kind === "albums")
@@ -1095,7 +1536,9 @@ function OrdersAdmin({ supabase }: { supabase: Client }) {
                       <span className="status-pill">{order.status}</span>
                     </td>
                     <td data-label="Total">{formatMoney(order.total_cents)}</td>
-                    <td data-label="Date">{new Date(order.created_at).toLocaleDateString()}</td>
+                    <td data-label="Date">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
                     <td data-label="Actions">
                       <div className="button-row">
                         <button onClick={() => void resend(order.id)}>
@@ -1399,7 +1842,9 @@ function SettingsAdmin({
                     <td data-label="Value">
                       <code>{JSON.stringify(row.value)}</code>
                     </td>
-                    <td data-label="Visibility">{row.is_public ? "Public" : "Staff"}</td>
+                    <td data-label="Visibility">
+                      {row.is_public ? "Public" : "Staff"}
+                    </td>
                     <td data-label="Actions">
                       <button
                         onClick={() => {
@@ -1461,7 +1906,9 @@ function AuditAdmin({ supabase }: { supabase: Client }) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td data-label="Time">{new Date(row.created_at).toLocaleString()}</td>
+                    <td data-label="Time">
+                      {new Date(row.created_at).toLocaleString()}
+                    </td>
                     <td data-label="Action">{row.action}</td>
                     <td data-label="Entity">{row.entity_type}</td>
                     <td data-label="Actor">{row.actor_id || "system"}</td>

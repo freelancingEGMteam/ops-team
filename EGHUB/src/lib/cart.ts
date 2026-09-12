@@ -1,14 +1,24 @@
-import type { Product } from "@/types/domain";
-
 export interface CartLine {
-  productId: string;
-  slug: string;
-  title: string;
+  variantId: string;
+  productSlug: string;
+  productTitle: string;
+  variantLabel: string | null;
   priceCents: number;
   quantity: number;
 }
 
-const CART_KEY = "egh-cart-v2";
+export interface CartVariant {
+  id: string;
+  price_cents: number;
+  label: string | null;
+}
+
+export interface CartVariantProduct {
+  slug: string;
+  title: string;
+}
+
+const CART_KEY = "egh-cart-v3";
 
 export function readCart(): CartLine[] {
   if (typeof window === "undefined") return [];
@@ -25,23 +35,28 @@ export function writeCart(lines: CartLine[]) {
   window.dispatchEvent(new CustomEvent("egh-cart-changed", { detail: lines }));
 }
 
-export function addProduct(product: Product) {
+/**
+ * Each variant is a one-per-cart digital license — adding one already in the
+ * cart is a no-op rather than bumping quantity, since there's no UI to dial
+ * it back down (these aren't goods you'd buy multiples of).
+ */
+export function addVariant(product: CartVariantProduct, variant: CartVariant) {
   const lines = readCart();
-  const existing = lines.find((line) => line.productId === product.id);
-  if (existing) existing.quantity += 1;
-  else
-    lines.push({
-      productId: product.id,
-      slug: product.slug,
-      title: product.title,
-      priceCents: product.price_cents,
-      quantity: 1,
-    });
+  if (lines.some((line) => line.variantId === variant.id)) return false;
+  lines.push({
+    variantId: variant.id,
+    productSlug: product.slug,
+    productTitle: product.title,
+    variantLabel: variant.label,
+    priceCents: variant.price_cents,
+    quantity: 1,
+  });
   writeCart(lines);
+  return true;
 }
 
-export function removeProduct(productId: string) {
-  writeCart(readCart().filter((line) => line.productId !== productId));
+export function removeVariant(variantId: string) {
+  writeCart(readCart().filter((line) => line.variantId !== variantId));
 }
 
 export function clearCart() {

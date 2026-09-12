@@ -28,7 +28,9 @@ import AuthNav from "@/components/auth/AuthNav";
       <a href="/about">About</a>
       <a href="/contact">Contact</a>
       <a href="/search">Search</a>
-      <a href="/cart">Cart</a>
+      <a href="/cart" class="cart-link"
+        >Cart<span class="cart-count" hidden>0</span></a
+      >
       <AuthNav client:load />
       <button class="theme-toggle" type="button" aria-label="Switch color theme"
         >◐</button
@@ -70,4 +72,39 @@ import AuthNav from "@/components/auth/AuthNav";
       document.documentElement.dataset.theme = next;
       localStorage.setItem("egh-theme", next);
     });
+
+  import("@/lib/cart").then(({ readCart }) => {
+    const badge = document.querySelector<HTMLElement>(".cart-count");
+    const refresh = () => {
+      if (!badge) return;
+      const count = readCart().length;
+      badge.textContent = String(count);
+      badge.hidden = count === 0;
+    };
+    refresh();
+    window.addEventListener("egh-cart-changed", refresh);
+    window.addEventListener("storage", (event) => {
+      if (event.key === null || event.key === "egh-cart-v3") refresh();
+    });
+  });
 </script>
+<style>
+  .cart-link {
+    position: relative;
+  }
+  .cart-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    margin-left: 5px;
+    border-radius: 99px;
+    background: var(--gold);
+    color: var(--on-gold);
+    font-size: 10px;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+</style>

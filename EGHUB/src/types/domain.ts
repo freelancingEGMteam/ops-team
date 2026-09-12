@@ -110,16 +110,26 @@ export interface Episode {
   updated_at: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  label: string | null;
+  kind: ProductKind;
+  price_cents: number;
+  currency: "usd";
+  stripe_price_id: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   slug: string;
   title: string;
-  kind: ProductKind;
   description: string | null;
-  price_cents: number;
-  currency: "usd";
   stripe_product_id: string | null;
-  stripe_price_id: string | null;
   stripe_tax_code: string | null;
   cover_asset_id: string | null;
   album_id: string | null;
@@ -151,7 +161,7 @@ export interface Order {
 export interface OrderItem {
   id: string;
   order_id: string;
-  product_id: string | null;
+  variant_id: string | null;
   title_snapshot: string;
   price_cents_snapshot: number;
   quantity: number;

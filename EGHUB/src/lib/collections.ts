@@ -1,4 +1,4 @@
-import type { Product } from "@/types/domain";
+import type { Product, ProductVariant } from "@/types/domain";
 
 export const sourceCollections = [
   { slug: "all", label: "All products" },
@@ -32,17 +32,22 @@ function includesAny(value: string, terms: string[]) {
 /**
  * Fourthwall uses overlapping collections. The local product model has one
  * catalog tag, so derive the same multi-collection membership from the
- * imported product's kind and title while keeping the source labels intact.
+ * imported product's variant kinds and title while keeping the source labels
+ * intact. A product can carry several variants (MP3 / chords / bundle), so
+ * it shows up in a collection if *any* variant matches.
  */
 export function collectionsForProduct(
-  product: Pick<Product, "title" | "kind" | "tag">,
+  product: Pick<Product, "title" | "tag"> & {
+    variants: Pick<ProductVariant, "kind">[];
+  },
 ): CollectionKey[] {
   const value = `${product.title} ${product.tag || ""}`.toLowerCase();
+  const kinds = new Set(product.variants.map((variant) => variant.kind));
   const collections = new Set<Exclude<CollectionKey, "all">>();
 
   const chordProduct =
-    product.kind === "album_chords" ||
-    product.kind === "track_chords" ||
+    kinds.has("album_chords") ||
+    kinds.has("track_chords") ||
     includesAny(value, ["chord sheet", "chord-sheet", "guitar chord"]);
   if (chordProduct) collections.add("chord-sheets");
 
@@ -60,9 +65,9 @@ export function collectionsForProduct(
   }
 
   const audioProduct =
-    product.kind === "album_mp3" ||
-    product.kind === "track_mp3" ||
-    product.kind === "bundle" ||
+    kinds.has("album_mp3") ||
+    kinds.has("track_mp3") ||
+    kinds.has("bundle") ||
     includesAny(value, ["audio", "mp3"]);
   if (audioProduct) collections.add("mp3-files");
 

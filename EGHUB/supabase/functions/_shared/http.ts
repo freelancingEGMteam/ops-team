@@ -1,3 +1,5 @@
+import type { ZodType } from "npm:zod@4.5.4";
+
 export const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
@@ -27,12 +29,25 @@ export function handleOptions(req: Request) {
     : null;
 }
 
-export async function readJson<T>(req: Request): Promise<T> {
+export async function readJson<T>(
+  req: Request,
+  schema?: ZodType<T>,
+): Promise<T> {
+  let body: unknown;
   try {
-    return (await req.json()) as T;
+    body = await req.json();
   } catch {
-    throw new Error("Invalid JSON body");
+    throw new Response("Invalid JSON body", { status: 400 });
   }
+  if (!schema) return body as T;
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    const message = result.error.issues
+      .map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
+      .join("; ");
+    throw new Response(`Invalid request: ${message}`, { status: 400 });
+  }
+  return result.data;
 }
 
 export async function functionError(

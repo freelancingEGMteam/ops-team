@@ -65,7 +65,7 @@ export default function CheckoutPage() {
     const insert = await supabase.from("cart_items").insert(
       lines.map((line) => ({
         cart_id: cartId,
-        product_id: line.productId,
+        variant_id: line.variantId,
         quantity: line.quantity,
       })),
     );
@@ -98,11 +98,12 @@ export default function CheckoutPage() {
           <div>
             <h2>Order</h2>
             {lines.map((line) => (
-              <div className="checkout-line" key={line.productId}>
+              <div className="checkout-line" key={line.variantId}>
                 <span>
-                  {line.title} × {line.quantity}
+                  {line.productTitle}
+                  {line.variantLabel ? ` — ${line.variantLabel}` : ""}
                 </span>
-                <strong>{formatMoney(line.priceCents * line.quantity)}</strong>
+                <strong>{formatMoney(line.priceCents)}</strong>
               </div>
             ))}
             <div className="checkout-total">

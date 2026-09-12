@@ -1,9 +1,12 @@
 ---
-import { formatMoney, type CatalogProduct } from "@/lib/catalog";
+import { formatPriceRange, type CatalogProduct } from "@/lib/catalog";
 interface Props {
   product: CatalogProduct;
 }
 const { product } = Astro.props;
+const eyebrow = product.collection_labels.length
+  ? product.collection_labels.slice(0, 2).join(" · ")
+  : product.tag || "Digital resource";
 ---
 
 <article class="catalog-card item-shadow">
@@ -22,19 +25,20 @@ const { product } = Astro.props;
       }
     </div>
     <div class="catalog-card-copy">
-      <span class="eyebrow">
-        {
-          product.collection_labels.length
-            ? product.collection_labels.slice(0, 2).join(" · ")
-            : product.tag || product.kind.replaceAll("_", " ")
-        }
-      </span>
+      <span class="eyebrow">{eyebrow}</span>
       <h3>{product.title}</h3>
       <p>
         {product.description || "A digital resource from Eternal Grace Hub."}
       </p>
       <div class="product-card-meta">
-        <strong class="price">{formatMoney(product.price_cents)}</strong>
+        <strong class="price">
+          {
+            formatPriceRange(
+              product.starting_price_cents,
+              product.max_price_cents,
+            )
+          }
+        </strong>
         {
           product.download_count > 0 ? null : (
             <span class="product-availability">Files coming soon</span>

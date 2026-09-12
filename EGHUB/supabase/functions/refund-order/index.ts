@@ -1,4 +1,5 @@
 import Stripe from "npm:stripe@22.6.1";
+import { z } from "npm:zod@4.5.4";
 import {
   functionError,
   handleOptions,
@@ -7,6 +8,12 @@ import {
 } from "../_shared/http.ts";
 import { audit, requireStaff } from "../_shared/auth.ts";
 import { sendEmail } from "../_shared/email.ts";
+
+const bodySchema = z.object({
+  orderId: z.string().uuid(),
+  orderItemIds: z.array(z.string().uuid()).min(1),
+  reason: z.string().trim().min(1).max(500).optional(),
+});
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -17,13 +24,7 @@ Deno.serve(async (req) => {
       "admin",
       "support",
     ]);
-    const { orderId, orderItemIds, reason } = await readJson<{
-      orderId: string;
-      orderItemIds: string[];
-      reason?: string;
-    }>(req);
-    if (!orderItemIds?.length)
-      return json(req, { error: "Select at least one order item" }, 400);
+    const { orderId, orderItemIds, reason } = await readJson(req, bodySchema);
     const { data: order } = await admin
       .from("orders")
       .select("*")

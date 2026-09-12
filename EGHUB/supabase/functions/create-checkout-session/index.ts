@@ -1,4 +1,5 @@
 import Stripe from "npm:stripe@22.6.1";
+import { z } from "npm:zod@4.5.4";
 import {
   functionError,
   handleOptions,
@@ -7,12 +8,14 @@ import {
 } from "../_shared/http.ts";
 import { audit, requireUser } from "../_shared/auth.ts";
 
+const bodySchema = z.object({ cartId: z.string().uuid() });
+
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
   try {
     const { user, admin } = await requireUser(req);
-    const { cartId } = await readJson<{ cartId: string }>(req);
+    const { cartId } = await readJson(req, bodySchema);
     const { data: cart } = await admin
       .from("carts")
       .select("*")
@@ -23,30 +26,31 @@ Deno.serve(async (req) => {
     if (!cart) return json(req, { error: "Cart not found" }, 404);
     const { data: cartItems } = await admin
       .from("cart_items")
-      .select("product_id,quantity")
+      .select("variant_id,quantity")
       .eq("cart_id", cartId);
     if (!cartItems?.length) return json(req, { error: "Cart is empty" }, 400);
-    const { data: products } = await admin
-      .from("products")
-      .select("*")
+    const { data: variants } = await admin
+      .from("product_variants")
+      .select("*,products!inner(status,stripe_tax_code)")
       .in(
         "id",
-        cartItems.map((item) => item.product_id),
+        cartItems.map((item) => item.variant_id),
       )
-      .eq("status", "published");
-    if (!products || products.length !== cartItems.length)
+      .eq("is_active", true)
+      .eq("products.status", "published");
+    if (!variants || variants.length !== cartItems.length)
       return json(req, { error: "One or more products are unavailable" }, 409);
-    const { data: productItems } = await admin
+    const { data: variantItems } = await admin
       .from("product_items")
-      .select("product_id")
+      .select("variant_id")
       .in(
-        "product_id",
-        products.map((product) => product.id),
+        "variant_id",
+        variants.map((variant) => variant.id),
       );
-    const productsWithDownloads = new Set(
-      (productItems || []).map((item) => item.product_id),
+    const variantsWithDownloads = new Set(
+      (variantItems || []).map((item) => item.variant_id),
     );
-    if (productsWithDownloads.size !== products.length)
+    if (variantsWithDownloads.size !== variants.length)
       return json(
         req,
         {
@@ -56,11 +60,11 @@ Deno.serve(async (req) => {
         409,
       );
     if (
-      products.some(
-        (product) =>
-          product.price_cents <= 0 ||
-          !product.stripe_price_id ||
-          !product.stripe_tax_code,
+      variants.some(
+        (variant: any) =>
+          variant.price_cents <= 0 ||
+          !variant.stripe_price_id ||
+          !variant.products?.stripe_tax_code,
       )
     )
       return json(
@@ -91,7 +95,7 @@ Deno.serve(async (req) => {
         .eq("id", user.id);
     }
     const itemMap = new Map(
-      cartItems.map((item) => [item.product_id, item.quantity]),
+      cartItems.map((item) => [item.variant_id, item.quantity]),
     );
     const site = Deno.env.get("SITE_URL") || "http://localhost:4321";
     const session = await stripe.checkout.sessions.create({
@@ -100,9 +104,9 @@ Deno.serve(async (req) => {
       automatic_tax: { enabled: true },
       billing_address_collection: "required",
       customer_update: { address: "auto", name: "auto" },
-      line_items: products.map((product) => ({
-        price: product.stripe_price_id!,
-        quantity: itemMap.get(product.id) || 1,
+      line_items: variants.map((variant) => ({
+        price: variant.stripe_price_id!,
+        quantity: itemMap.get(variant.id) || 1,
       })),
       metadata: { user_id: user.id, cart_id: cartId },
       success_url: `${site}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,

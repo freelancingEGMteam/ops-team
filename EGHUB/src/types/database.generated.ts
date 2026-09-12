@@ -7,6 +7,7 @@ import type {
   Order,
   OrderItem,
   Product,
+  ProductVariant,
   Profile,
   Track,
 } from "./domain";
@@ -43,9 +44,10 @@ export interface Database {
       }>;
       episode_themes: Table<{ episode_id: string; theme: string }>;
       products: Table<Product>;
+      product_variants: Table<ProductVariant>;
       product_items: Table<{
         id: string;
-        product_id: string;
+        variant_id: string;
         media_asset_id: string;
         label: string | null;
       }>;
@@ -60,7 +62,7 @@ export interface Database {
       cart_items: Table<{
         id: string;
         cart_id: string;
-        product_id: string;
+        variant_id: string;
         quantity: number;
         created_at: string;
       }>;

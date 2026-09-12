@@ -1,3 +1,4 @@
+import { z } from "npm:zod@4.5.4";
 import {
   functionError,
   handleOptions,
@@ -6,12 +7,14 @@ import {
 } from "../_shared/http.ts";
 import { audit, requireUser } from "../_shared/auth.ts";
 
+const bodySchema = z.object({ entitlementId: z.string().uuid() });
+
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
   try {
     const { user, admin } = await requireUser(req);
-    const { entitlementId } = await readJson<{ entitlementId: string }>(req);
+    const { entitlementId } = await readJson(req, bodySchema);
     const { data: entitlement } = await admin
       .from("download_entitlements")
       .select("*,media_assets(*)")
