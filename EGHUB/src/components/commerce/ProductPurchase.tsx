@@ -60,7 +60,10 @@ export default function ProductPurchase({
       )}
       {!hasDownloads && (
         <span className="purchase-note">
-          Files are coming soon, but you can add this album to your cart now.
+          Files are coming soon.{" "}
+          {product.price_cents === 0
+            ? "Add this release to your library now."
+            : "Add this album to your cart now; checkout will be available once downloads are ready."}{" "}
           Downloads will be delivered as soon as they are ready.
         </span>
       )}
