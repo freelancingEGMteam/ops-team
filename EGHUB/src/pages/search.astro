@@ -8,25 +8,28 @@ import { getCatalog } from "@/lib/catalog";
 import { toPlainText } from "@/lib/rich-text";
 const query = (Astro.url.searchParams.get("q") || "").trim().toLowerCase();
 const catalog = await getCatalog();
+
+const matches = (haystack: string) => haystack.toLowerCase().includes(query);
+
 const albums = query
   ? catalog.albums.filter((item) =>
-      `${item.title} ${item.description || ""} ${item.scripture || ""}`
-        .toLowerCase()
-        .includes(query),
+      matches(
+        `${item.title} ${item.artist || ""} ${item.description || ""} ${item.scripture || ""} ${item.theme || ""}`,
+      ),
     )
   : [];
 const episodes = query
   ? catalog.episodes.filter((item) =>
-      `${item.title} ${item.summary || ""} ${item.passage || ""}`
-        .toLowerCase()
-        .includes(query),
+      matches(
+        `${item.title} ${item.summary || ""} ${item.passage || ""} ${item.book || ""} ${item.testament || ""}`,
+      ),
     )
   : [];
 const products = query
   ? catalog.products.filter((item) =>
-      `${item.title} ${toPlainText(item.description)}`
-        .toLowerCase()
-        .includes(query),
+      matches(
+        `${item.title} ${toPlainText(item.description)} ${item.tag || ""} ${item.collection_labels.join(" ")}`,
+      ),
     )
   : [];
 const resultCount = albums.length + episodes.length + products.length;
@@ -74,16 +77,43 @@ const resultCount = albums.length + episodes.length + products.length;
           actionLabel="Browse worship"
         />
       ) : (
-        <div class="catalog-grid">
-          {albums.map((item) => (
-            <AlbumCard album={item} />
-          ))}
-          {episodes.map((item) => (
-            <EpisodeCard episode={item} />
-          ))}
-          {products.map((item) => (
-            <ProductCard product={item} />
-          ))}
+        <div class="search-groups">
+          {products.length > 0 && (
+            <div class="search-group">
+              <h2>
+                Worship resources <span>{products.length}</span>
+              </h2>
+              <div class="catalog-grid">
+                {products.map((item) => (
+                  <ProductCard product={item} />
+                ))}
+              </div>
+            </div>
+          )}
+          {albums.length > 0 && (
+            <div class="search-group">
+              <h2>
+                Albums <span>{albums.length}</span>
+              </h2>
+              <div class="catalog-grid">
+                {albums.map((item) => (
+                  <AlbumCard album={item} />
+                ))}
+              </div>
+            </div>
+          )}
+          {episodes.length > 0 && (
+            <div class="search-group">
+              <h2>
+                BibleInVideo <span>{episodes.length}</span>
+              </h2>
+              <div class="catalog-grid">
+                {episodes.map((item) => (
+                  <EpisodeCard episode={item} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )
     }
@@ -105,6 +135,24 @@ const resultCount = albums.length + episodes.length + products.length;
     border-radius: 8px;
     background: var(--bg-elev);
     color: var(--ink);
+  }
+  .search-groups {
+    display: grid;
+    gap: 44px;
+  }
+  .search-group h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    font-size: 1.15rem;
+  }
+  .search-group h2 span {
+    padding: 2px 9px;
+    border-radius: 99px;
+    background: var(--bg-elev);
+    color: var(--ink-soft);
+    font-size: 0.8rem;
   }
   @media (max-width: 600px) {
     .search-form {

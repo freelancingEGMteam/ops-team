@@ -12,6 +12,19 @@ import AuthNav from "@/components/auth/AuthNav";
         <small>Scripture · Worship · Grace</small>
       </span>
     </a>
+    <form class="header-search" role="search" method="get" action="/search">
+      <label class="sr-only" for="header-search">Search the catalog</label>
+      <input
+        id="header-search"
+        type="search"
+        name="q"
+        placeholder="Search albums, chord sheets, videos…"
+        autocomplete="off"
+      />
+      <button type="submit" aria-label="Search">
+        <span aria-hidden="true">⌕</span>
+      </button>
+    </form>
     <button
       class="nav-mobile-btn"
       type="button"
@@ -27,7 +40,6 @@ import AuthNav from "@/components/auth/AuthNav";
       <a href="/resources">Worship</a>
       <a href="/about">About</a>
       <a href="/contact">Contact</a>
-      <a href="/search">Search</a>
       <a href="/cart" class="cart-link"
         >Cart<span class="cart-count" hidden>0</span></a
       >
@@ -106,5 +118,56 @@ import AuthNav from "@/components/auth/AuthNav";
     font-size: 10px;
     font-weight: 700;
     vertical-align: middle;
+  }
+
+  /* Always-visible catalog search, so finding a product never requires
+     navigating to the search page first. */
+  .header-search {
+    display: flex;
+    flex: 1 1 260px;
+    max-width: 420px;
+    margin: 0 20px;
+  }
+  .header-search input {
+    flex: 1;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-right: 0;
+    border-radius: 8px 0 0 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.9rem;
+  }
+  .header-search input::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .header-search input:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
+  .header-search button {
+    min-width: 44px;
+    border: 1px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    background: var(--gold);
+    color: var(--on-gold);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .header-search button:hover {
+    background: var(--gold-bright);
+    border-color: var(--gold-bright);
+  }
+
+  @media (max-width: 900px) {
+    .header-search {
+      order: 3;
+      flex-basis: 100%;
+      max-width: none;
+      margin: 10px 0 0;
+    }
   }
 </style>
