@@ -140,7 +140,7 @@ function PurchaseStyles() {
   return (
     <style>{`
       .buy-box-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
-      .buy-box-actions span{width:100%;color:var(--ink-dim);font-size:.9rem}
+      .buy-box-actions > span{width:100%;color:var(--ink-dim);font-size:.9rem}
       .buy-box-actions .btn{width:100%;justify-content:center}
       .variant-picker{width:100%;border:0;padding:0;margin:0 0 4px;display:grid;gap:8px}
       .variant-picker legend{padding:0 0 8px;color:var(--ink-soft);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}

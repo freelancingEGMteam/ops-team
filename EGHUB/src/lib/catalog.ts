@@ -246,7 +246,7 @@ export function formatPriceRange(minCents: number, maxCents: number) {
 }
 
 const variantKindLabels: Record<string, string> = {
-  album_mp3: "Full MP3 audio download",
+  album_mp3: "MP3 audio download",
   track_mp3: "MP3 audio download",
   album_chords: "Chord chart PDF for worship leaders",
   track_chords: "Chord chart PDF",
