@@ -20,9 +20,6 @@ export default function ProductPurchase({
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
   const selected = purchasable.find((variant) => variant.id === selectedId);
-  const anyDownloadable = purchasable.some(
-    (variant) => variant.download_count > 0,
-  );
 
   async function claimFree() {
     if (!selected) return;
@@ -69,7 +66,7 @@ export default function ProductPurchase({
     window.location.href = "/checkout";
   }
 
-  if (!purchasable.length || !anyDownloadable) {
+  if (!purchasable.length) {
     return (
       <div className="buy-box-actions">
         <button className="btn btn-ghost" type="button" disabled>
@@ -105,7 +102,15 @@ export default function ProductPurchase({
         </strong>
       )}
       {selected && selected.download_count === 0 ? (
-        <span>This option's files are still being prepared.</span>
+        <>
+          <button className="btn btn-ghost" type="button" disabled>
+            Files coming soon
+          </button>
+          <span>
+            This option is public in the catalog while its downloadable files
+            are being prepared.
+          </span>
+        </>
       ) : selected && selected.price_cents === 0 ? (
         <button
           className="btn btn-solid"
@@ -141,7 +146,7 @@ function PurchaseStyles() {
       .variant-picker legend{padding:0 0 8px;color:var(--ink-soft);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
       .variant-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
       .variant-option:has(input:checked){border-color:var(--gold);background:var(--bg-elev)}
-      .variant-option.is-disabled{opacity:.55;cursor:not-allowed}
+      .variant-option.is-pending{opacity:.7}
       .variant-option-label{flex:1}
       .variant-option-price{color:var(--ink-dim);font-size:.9rem}
     `}</style>
@@ -157,21 +162,20 @@ function VariantOption({
   checked: boolean;
   onSelect: () => void;
 }) {
-  const disabled = variant.download_count === 0;
+  const pending = variant.download_count === 0;
   return (
-    <label className={`variant-option${disabled ? " is-disabled" : ""}`}>
+    <label className={`variant-option${pending ? " is-pending" : ""}`}>
       <input
         type="radio"
         name="variant"
         checked={checked}
-        disabled={disabled}
         onChange={onSelect}
       />
       <span className="variant-option-label">
         {variant.label || "Standard"}
       </span>
       <span className="variant-option-price">
-        {disabled ? "Coming soon" : formatMoney(variant.price_cents)}
+        {pending ? "Coming soon" : formatMoney(variant.price_cents)}
       </span>
     </label>
   );

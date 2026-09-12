@@ -214,19 +214,20 @@ export async function getProduct(slug: string): Promise<CatalogProduct | null> {
 export async function getMergedProductSlug(slug: string) {
   const supabase = createPublicServerClient();
   if (!supabase) return null;
-  const { data } = await supabase
+  const { data: retired } = await supabase
     .from("products")
-    .select(
-      "merged_into:products!products_merged_into_product_id_fkey(slug,status)",
-    )
+    .select("merged_into_product_id")
     .eq("slug", slug)
     .maybeSingle();
-  const merged = (
-    Array.isArray((data as any)?.merged_into)
-      ? (data as any).merged_into[0]
-      : (data as any)?.merged_into
-  ) as { slug: string; status: string } | null | undefined;
-  return merged?.status === "published" ? merged.slug : null;
+  const targetId = (retired as any)?.merged_into_product_id;
+  if (!targetId) return null;
+  const { data: target } = await supabase
+    .from("products")
+    .select("slug")
+    .eq("id", targetId)
+    .eq("status", "published")
+    .maybeSingle();
+  return ((target as any)?.slug as string | undefined) ?? null;
 }
 
 export function formatMoney(cents: number) {
