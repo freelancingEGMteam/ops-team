@@ -206,6 +206,29 @@ export async function getProduct(slug: string): Promise<CatalogProduct | null> {
   return data ? productRow(data) : null;
 }
 
+/**
+ * Look-alike products get consolidated into one parent with variants. The
+ * absorbed products are archived and left pointing at their replacement so
+ * their existing URLs redirect instead of 404ing.
+ */
+export async function getMergedProductSlug(slug: string) {
+  const supabase = createPublicServerClient();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("products")
+    .select(
+      "merged_into:products!products_merged_into_product_id_fkey(slug,status)",
+    )
+    .eq("slug", slug)
+    .maybeSingle();
+  const merged = (
+    Array.isArray((data as any)?.merged_into)
+      ? (data as any).merged_into[0]
+      : (data as any)?.merged_into
+  ) as { slug: string; status: string } | null | undefined;
+  return merged?.status === "published" ? merged.slug : null;
+}
+
 export function formatMoney(cents: number) {
   return cents === 0
     ? "Free"

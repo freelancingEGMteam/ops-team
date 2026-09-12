@@ -1,11 +1,20 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ProductPurchase from "@/components/commerce/ProductPurchase";
-import { formatPriceRange, getProduct, variantKindLabel } from "@/lib/catalog";
+import {
+  formatPriceRange,
+  getMergedProductSlug,
+  getProduct,
+  variantKindLabel,
+} from "@/lib/catalog";
 import { parseRichText, toPlainText, truncateText } from "@/lib/rich-text";
 const { slug } = Astro.params;
 const product = slug ? await getProduct(slug) : null;
-if (!product) return Astro.redirect("/404");
+if (!product) {
+  const mergedSlug = slug ? await getMergedProductSlug(slug) : null;
+  if (mergedSlug) return Astro.redirect(`/resources/${mergedSlug}`, 301);
+  return Astro.redirect("/404");
+}
 
 const activeVariants = product.variants.filter((variant) => variant.is_active);
 const eyebrow =
