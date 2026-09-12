@@ -39,17 +39,7 @@ export default function ProductPurchase({
 
   return (
     <div className="purchase-actions">
-      {!hasDownloads ? (
-        <>
-          <button className="btn btn-ghost" type="button" disabled>
-            Files coming soon
-          </button>
-          <span>
-            This release is public in the catalog while its downloadable files
-            are being prepared.
-          </span>
-        </>
-      ) : product.price_cents === 0 ? (
+      {product.price_cents === 0 ? (
         <button
           className="btn btn-solid"
           type="button"
@@ -68,8 +58,14 @@ export default function ProductPurchase({
           </a>
         </>
       )}
+      {!hasDownloads && (
+        <span className="purchase-note">
+          Files are coming soon, but you can add this album to your cart now.
+          Downloads will be delivered as soon as they are ready.
+        </span>
+      )}
       {status && <span role="status">{status}</span>}
-      <style>{`.purchase-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:24px}.purchase-actions span{width:100%;color:var(--ink-dim);font-size:.9rem}`}</style>
+      <style>{`.purchase-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:24px}.purchase-actions span{width:100%;color:var(--ink-dim);font-size:.9rem}.purchase-actions .purchase-note{padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg-elev)}`}</style>
     </div>
   );
 }

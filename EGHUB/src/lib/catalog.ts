@@ -25,6 +25,7 @@ export type CatalogProduct = Product & {
   cover_url: string | null;
   cover_alt: string | null;
   download_count: number;
+  tracks: Track[];
   collections: CollectionKey[];
   collection_labels: string[];
 };
@@ -82,6 +83,7 @@ function productRow(row: any): CatalogProduct {
     cover_url: publicMediaUrl(cover),
     cover_alt: cover?.alt_text || null,
     download_count: downloadCount,
+    tracks: Array.isArray(row.tracks) ? (row.tracks as Track[]) : [],
     collections,
     collection_labels: collections.map(collectionLabel),
   };
@@ -170,7 +172,18 @@ export async function getProduct(slug: string): Promise<CatalogProduct | null> {
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return data ? productRow(data) : null;
+  if (!data) return null;
+  const product = productRow(data);
+  if (!product.album_id) return product;
+
+  const { data: tracks } = await supabase
+    .from("tracks")
+    .select("*")
+    .eq("album_id", product.album_id)
+    .eq("status", "published")
+    .order("track_number");
+
+  return { ...product, tracks: (tracks ?? []) as Track[] };
 }
 
 export function formatMoney(cents: number) {

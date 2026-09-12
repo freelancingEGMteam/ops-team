@@ -2,9 +2,11 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ProductPurchase from "@/components/commerce/ProductPurchase";
 import { formatMoney, getProduct } from "@/lib/catalog";
+import { tracklistForProduct } from "@/lib/tracklist";
 const { slug } = Astro.params;
 const product = slug ? await getProduct(slug) : null;
 if (!product) return Astro.redirect("/404");
+const tracklist = tracklistForProduct(product);
 const productStructuredData: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "Product",
@@ -55,6 +57,29 @@ const productStructuredData: Record<string, unknown> = {
           downloadCount={product.download_count}
         />
       </div>
+      {
+        tracklist.length > 0 && (
+          <section class="product-tracklist" aria-labelledby="track-list-title">
+            <div class="tracklist-heading">
+              <div>
+                <span class="eyebrow">Included with this album</span>
+                <h2 id="track-list-title">Songs in this release</h2>
+              </div>
+              <span class="track-count">{tracklist.length} songs</span>
+            </div>
+            <ol>
+              {tracklist.map((track) => (
+                <li>
+                  <span class="track-number">
+                    {String(track.number).padStart(2, "0")}
+                  </span>
+                  <span>{track.title}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      }
     </div>
   </section>
 </BaseLayout>
@@ -92,9 +117,63 @@ const productStructuredData: Record<string, unknown> = {
     height: 100%;
     object-fit: cover;
   }
+  .product-tracklist {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    padding: 26px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-elev);
+  }
+  .tracklist-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tracklist-heading h2 {
+    margin-top: 8px;
+    font-size: 1.55rem;
+  }
+  .track-count {
+    color: var(--ink-dim);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+  .product-tracklist ol {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .product-tracklist li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 52px;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink);
+  }
+  .track-number {
+    flex: 0 0 28px;
+    color: var(--gold-bright);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
   @media (max-width: 760px) {
     .product-detail {
       grid-template-columns: 1fr;
+    }
+    .product-tracklist ol {
+      grid-template-columns: 1fr;
+    }
+    .product-tracklist {
+      padding: 20px;
     }
   }
 </style>

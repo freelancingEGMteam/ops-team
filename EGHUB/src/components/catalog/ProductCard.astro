@@ -7,7 +7,7 @@ const { product } = Astro.props;
 ---
 
 <article class="catalog-card item-shadow">
-  <a href={`/resources/${product.slug}`}>
+  <a class="catalog-card-link" href={`/resources/${product.slug}`}>
     <div class="catalog-art product-art">
       {
         product.cover_url ? (
@@ -43,4 +43,60 @@ const { product } = Astro.props;
       </div>
     </div>
   </a>
+  <div class="product-card-actions">
+    <a class="btn btn-ghost" href={`/resources/${product.slug}`}>View album</a>
+    {
+      product.price_cents > 0 && (
+        <button
+          class="btn btn-solid catalog-add-to-cart"
+          type="button"
+          data-product-id={product.id}
+          data-product-slug={product.slug}
+          data-product-title={product.title}
+          data-product-price={product.price_cents}
+        >
+          Add to cart
+        </button>
+      )
+    }
+  </div>
 </article>
+
+<script>
+  import { addProduct } from "@/lib/cart";
+
+  document
+    .querySelectorAll<HTMLButtonElement>(".catalog-add-to-cart")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        addProduct({
+          id: button.dataset.productId || "",
+          slug: button.dataset.productSlug || "",
+          title: button.dataset.productTitle || "",
+          price_cents: Number(button.dataset.productPrice || 0),
+        } as Parameters<typeof addProduct>[0]);
+        button.textContent = "Added to cart";
+        window.setTimeout(() => {
+          button.textContent = "Add to cart";
+        }, 1600);
+      });
+    });
+</script>
+
+<style>
+  .catalog-card-link {
+    display: block;
+  }
+  .product-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0 20px 20px;
+  }
+  .product-card-actions .btn {
+    flex: 1 1 130px;
+    justify-content: center;
+    min-height: 42px;
+    font-size: 0.78rem;
+  }
+</style>
