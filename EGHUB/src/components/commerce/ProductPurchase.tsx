@@ -144,11 +144,12 @@ function PurchaseStyles() {
       .buy-box-actions .btn{width:100%;justify-content:center}
       .variant-picker{width:100%;border:0;padding:0;margin:0 0 4px;display:grid;gap:8px}
       .variant-picker legend{padding:0 0 8px;color:var(--ink-soft);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
-      .variant-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+      .variant-option{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
       .variant-option:has(input:checked){border-color:var(--gold);background:var(--bg-elev)}
       .variant-option.is-pending{opacity:.7}
-      .variant-option-label{flex:1}
-      .variant-option-price{color:var(--ink-dim);font-size:.9rem}
+      .variant-option input{flex:none}
+      .variant-option-label{flex:1;min-width:0}
+      .variant-option-price{flex:none;color:var(--ink-dim);font-size:.85rem;white-space:nowrap}
     `}</style>
   );
 }
