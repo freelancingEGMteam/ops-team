@@ -5,6 +5,7 @@ import EpisodeCard from "@/components/catalog/EpisodeCard.astro";
 import ProductCard from "@/components/catalog/ProductCard.astro";
 import EmptyState from "@/components/site/EmptyState.astro";
 import { getCatalog } from "@/lib/catalog";
+import { toPlainText } from "@/lib/rich-text";
 const query = (Astro.url.searchParams.get("q") || "").trim().toLowerCase();
 const catalog = await getCatalog();
 const albums = query
@@ -23,7 +24,9 @@ const episodes = query
   : [];
 const products = query
   ? catalog.products.filter((item) =>
-      `${item.title} ${item.description || ""}`.toLowerCase().includes(query),
+      `${item.title} ${toPlainText(item.description)}`
+        .toLowerCase()
+        .includes(query),
     )
   : [];
 const resultCount = albums.length + episodes.length + products.length;

@@ -1,5 +1,6 @@
 ---
 import { formatPriceRange, type CatalogProduct } from "@/lib/catalog";
+import { toPlainText, truncateText } from "@/lib/rich-text";
 interface Props {
   product: CatalogProduct;
 }
@@ -7,6 +8,11 @@ const { product } = Astro.props;
 const eyebrow = product.collection_labels.length
   ? product.collection_labels.slice(0, 2).join(" · ")
   : product.tag || "Digital resource";
+const blurb = truncateText(
+  toPlainText(product.description) ||
+    "A digital resource from Eternal Grace Hub.",
+  150,
+);
 ---
 
 <article class="catalog-card item-shadow">
@@ -27,9 +33,7 @@ const eyebrow = product.collection_labels.length
     <div class="catalog-card-copy">
       <span class="eyebrow">{eyebrow}</span>
       <h3>{product.title}</h3>
-      <p>
-        {product.description || "A digital resource from Eternal Grace Hub."}
-      </p>
+      <p>{blurb}</p>
       <div class="product-card-meta">
         <strong class="price">
           {
