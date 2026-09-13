@@ -3,6 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import AlbumCard from "@/components/catalog/AlbumCard.astro";
 import ProductCard from "@/components/catalog/ProductCard.astro";
 import EmptyState from "@/components/site/EmptyState.astro";
+import Pagination from "@/components/site/Pagination.astro";
 import { getCatalog } from "@/lib/catalog";
 import {
   isCollectionKey,
@@ -19,7 +20,7 @@ const requestedPage = Number.parseInt(
   Astro.url.searchParams.get("page") || "1",
   10,
 );
-const pageSize = 48;
+const pageSize = 24;
 const albumIds = new Set(albums.map((album) => album.id));
 const albumTitles = new Set(
   albums.map((album) => album.title.trim().toLowerCase()),
@@ -73,6 +74,8 @@ const pageEntries = releaseEntries.slice(
   (currentPage - 1) * pageSize,
   currentPage * pageSize,
 );
+const rangeStart = releaseEntries.length ? (currentPage - 1) * pageSize + 1 : 0;
+const rangeEnd = Math.min(currentPage * pageSize, releaseEntries.length);
 
 function collectionHref(collection: CollectionKey, page = 1) {
   const params = new URLSearchParams();
@@ -119,8 +122,11 @@ function collectionHref(collection: CollectionKey, page = 1) {
         }
       </nav>
       <p class="catalog-result-meta">
-        {releaseEntries.length}
-        {releaseEntries.length === 1 ? "release" : "releases"}
+        {
+          releaseEntries.length
+            ? `${rangeStart}–${rangeEnd} of ${releaseEntries.length} releases`
+            : "0 releases"
+        }
       </p>
     </div>
 
@@ -145,38 +151,11 @@ function collectionHref(collection: CollectionKey, page = 1) {
       )
     }
 
-    {
-      totalPages > 1 && (
-        <nav class="catalog-pagination" aria-label="Product pages">
-          {currentPage > 1 ? (
-            <a
-              class="chip"
-              href={collectionHref(activeCollection, currentPage - 1)}
-            >
-              ← Previous
-            </a>
-          ) : (
-            <span class="chip is-disabled" aria-hidden="true">
-              ← Previous
-            </span>
-          )}
-          <span aria-current="page">
-            Page {currentPage} of {totalPages}
-          </span>
-          {currentPage < totalPages ? (
-            <a
-              class="chip"
-              href={collectionHref(activeCollection, currentPage + 1)}
-            >
-              Next →
-            </a>
-          ) : (
-            <span class="chip is-disabled" aria-hidden="true">
-              Next →
-            </span>
-          )}
-        </nav>
-      )
-    }
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      hrefFor={(page) => collectionHref(activeCollection, page)}
+      label="Release pages"
+    />
   </section>
 </BaseLayout>

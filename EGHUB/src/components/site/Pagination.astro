@@ -1,0 +1,84 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  hrefFor: (page: number) => string;
+  label?: string;
+}
+const { currentPage, totalPages, hrefFor, label = "Pagination" } = Astro.props;
+
+// Show every page when there are few, otherwise window around the current
+// one and keep the first and last reachable, so long catalogs stay usable
+// without rendering fifty numbers.
+function buildPages(current: number, total: number): (number | "gap")[] {
+  if (total <= 7)
+    return Array.from({ length: total }, (_unused, index) => index + 1);
+  const pages: (number | "gap")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) pages.push("gap");
+  for (let page = start; page <= end; page += 1) pages.push(page);
+  if (end < total - 1) pages.push("gap");
+  pages.push(total);
+  return pages;
+}
+
+const pages = buildPages(currentPage, totalPages);
+---
+
+{
+  totalPages > 1 && (
+    <nav class="catalog-pagination" aria-label={label}>
+      {currentPage > 1 ? (
+        <a class="chip" href={hrefFor(currentPage - 1)} rel="prev">
+          ← Previous
+        </a>
+      ) : (
+        <span class="chip is-disabled" aria-hidden="true">
+          ← Previous
+        </span>
+      )}
+
+      <span class="pagination-pages">
+        {pages.map((page) =>
+          page === "gap" ? (
+            <span class="pagination-gap" aria-hidden="true">
+              …
+            </span>
+          ) : page === currentPage ? (
+            <span class="chip active" aria-current="page">
+              {page}
+            </span>
+          ) : (
+            <a class="chip" href={hrefFor(page)} aria-label={`Page ${page}`}>
+              {page}
+            </a>
+          ),
+        )}
+      </span>
+
+      {currentPage < totalPages ? (
+        <a class="chip" href={hrefFor(currentPage + 1)} rel="next">
+          Next →
+        </a>
+      ) : (
+        <span class="chip is-disabled" aria-hidden="true">
+          Next →
+        </span>
+      )}
+    </nav>
+  )
+}
+
+<style>
+  .pagination-pages {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .pagination-gap {
+    padding: 0 2px;
+    color: var(--ink-soft);
+  }
+</style>

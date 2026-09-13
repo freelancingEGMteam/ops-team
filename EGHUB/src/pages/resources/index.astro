@@ -3,8 +3,29 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import ProductCard from "@/components/catalog/ProductCard.astro";
 import AlbumCard from "@/components/catalog/AlbumCard.astro";
 import EmptyState from "@/components/site/EmptyState.astro";
+import Pagination from "@/components/site/Pagination.astro";
 import { getCatalog } from "@/lib/catalog";
 const { products, albums } = await getCatalog();
+
+// The library was rendering every product in one endless scroll.
+const pageSize = 24;
+const requestedPage = Number.parseInt(
+  Astro.url.searchParams.get("page") || "1",
+  10,
+);
+const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
+const currentPage = Math.min(
+  totalPages,
+  Math.max(1, Number.isFinite(requestedPage) ? requestedPage : 1),
+);
+const pageProducts = products.slice(
+  (currentPage - 1) * pageSize,
+  currentPage * pageSize,
+);
+const rangeStart = products.length ? (currentPage - 1) * pageSize + 1 : 0;
+const rangeEnd = Math.min(currentPage * pageSize, products.length);
+const pageHref = (page: number) =>
+  page > 1 ? `/resources?page=${page}` : "/resources";
 ---
 
 <BaseLayout
@@ -22,26 +43,20 @@ const { products, albums } = await getCatalog();
     </div>
   </section>
   {
-    albums.length > 0 && (
+    albums.length > 0 && currentPage === 1 && (
       <section class="container section-shell">
-        <>
-          <div class="section-heading">
-            <>
-              <div>
-                <>
-                  <span class="eyebrow">Latest albums</span>
-                  <h2>Listen first</h2>
-                </>
-              </div>
-              <a href="/music/albums">Every album →</a>
-            </>
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Latest albums</span>
+            <h2>Listen first</h2>
           </div>
-          <div class="catalog-grid">
-            {albums.slice(0, 3).map((album) => (
-              <AlbumCard album={album} />
-            ))}
-          </div>
-        </>
+          <a href="/music/albums">Every album →</a>
+        </div>
+        <div class="catalog-grid">
+          {albums.slice(0, 3).map((album) => (
+            <AlbumCard album={album} />
+          ))}
+        </div>
       </section>
     )
   }
@@ -52,10 +67,17 @@ const { products, albums } = await getCatalog();
           Downloads and bundles
         </h2>
       </div>
+      {
+        products.length > 0 && (
+          <p class="catalog-result-meta">
+            {rangeStart}–{rangeEnd} of {products.length}
+          </p>
+        )
+      }
     </div>{
-      products.length ? (
+      pageProducts.length ? (
         <div class="catalog-grid">
-          {products.map((product) => (
+          {pageProducts.map((product) => (
             <ProductCard product={product} />
           ))}
         </div>
@@ -68,5 +90,11 @@ const { products, albums } = await getCatalog();
         />
       )
     }
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      hrefFor={pageHref}
+      label="Resource pages"
+    />
   </section>
 </BaseLayout>
