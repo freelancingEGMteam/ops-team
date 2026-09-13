@@ -1,15 +1,30 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { getAlbum } from "@/lib/catalog";
+import ProductCard from "@/components/catalog/ProductCard.astro";
+import { getAlbum, getCatalog } from "@/lib/catalog";
+import { parseRichText, toPlainText, truncateText } from "@/lib/rich-text";
 const { slug } = Astro.params;
 const result = slug ? await getAlbum(slug) : null;
 if (!result) return Astro.redirect("/404");
 const { album, tracks } = result;
+
+// Album copy is imported alongside the product copy, so it can carry the
+// same HTML. Parse it rather than printing tags on the page.
+const descriptionBlocks = parseRichText(album.description);
+const plainDescription = toPlainText(album.description);
+
+// "Available downloads" used to point at the whole catalog. Link to the
+// products actually built from this album instead, and only offer the
+// button when there is something to buy.
+const { products } = await getCatalog();
+const albumProducts = products.filter(
+  (product) => product.album_id === album.id,
+);
 ---
 
 <BaseLayout
   title={album.title}
-  description={album.description ||
+  description={truncateText(plainDescription, 160) ||
     `Listen to ${album.title} by ${album.artist}.`}
   canonicalPath={`/music/albums/${album.slug}`}
   image={album.cover_url}
@@ -38,16 +53,62 @@ const { album, tracks } = result;
       </div><div>
         <span class="eyebrow">{album.year || "Eternal Grace Music"}</span><h1>
           {album.title}
-        </h1><p class="lead">
-          {
-            album.description ||
-              album.scripture ||
-              "A worship record from Eternal Grace Music."
-          }
-        </p><a class="btn btn-solid" href="/resources">Available downloads</a>
+        </h1>
+        {
+          descriptionBlocks.length > 0 ? (
+            <div class="album-copy">
+              {descriptionBlocks.map((block) =>
+                block.type === "list" ? (
+                  <ul>
+                    {block.items.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{block.text}</p>
+                ),
+              )}
+            </div>
+          ) : (
+            <p class="lead">
+              {album.scripture || "A worship record from Eternal Grace Music."}
+            </p>
+          )
+        }
+        {
+          albumProducts.length > 0 && (
+            <a
+              class="btn btn-solid"
+              href={`/resources/${albumProducts[0].slug}`}
+            >
+              Available downloads
+            </a>
+          )
+        }
       </div>
     </div>
   </section>
+
+  {
+    albumProducts.length > 0 && (
+      <section class="section-shell section-contrast">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">Buy this record</span>
+              <h2>Downloads from this album</h2>
+            </div>
+            <a href="/resources">All resources →</a>
+          </div>
+          <div class="catalog-grid">
+            {albumProducts.slice(0, 4).map((product) => (
+              <ProductCard product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
   <section class="container section-shell">
     <h2>Track list</h2>{
       tracks.length ? (
@@ -94,6 +155,21 @@ const { album, tracks } = result;
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+  .album-copy {
+    margin-top: 16px;
+  }
+  .album-copy p {
+    margin-top: 12px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+  }
+  .album-copy ul {
+    margin-top: 12px;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
+    color: var(--ink-dim);
   }
   .album-detail .btn {
     margin-top: 28px;
