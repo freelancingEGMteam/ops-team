@@ -10,14 +10,26 @@ export interface MediaAssetSummary {
   title: string;
   kind: string;
   bucket: string;
+  path: string;
   size_bytes: number | null;
 }
+
+const IMAGE_KINDS = new Set(["cover", "image", "thumbnail"]);
 
 function formatSize(bytes: number | null) {
   if (!bytes) return "";
   return bytes > 1024 * 1024
     ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
     : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/** Private buckets are not publicly readable, so only public art previews. */
+function thumbnailUrl(asset: MediaAssetSummary) {
+  const base = import.meta.env.PUBLIC_SUPABASE_URL;
+  if (!base || asset.bucket !== "public-media" || !IMAGE_KINDS.has(asset.kind))
+    return null;
+  const path = asset.path.split("/").map(encodeURIComponent).join("/");
+  return `${base.replace(/\/$/, "")}/storage/v1/object/public/${asset.bucket}/${path}`;
 }
 
 /** Classify the upload from its own MIME type rather than asking staff. */
@@ -32,11 +44,30 @@ function inferKind(file: File, bucket: string, fallback: string) {
   return fallback;
 }
 
+function AssetThumb({ asset }: { asset: MediaAssetSummary }) {
+  const url = thumbnailUrl(asset);
+  if (url)
+    return <img className="media-thumb" src={url} alt="" loading="lazy" />;
+  const badge =
+    asset.kind === "audio" || asset.kind === "audio_preview"
+      ? "♪"
+      : asset.kind === "video"
+        ? "▶"
+        : asset.kind === "pdf"
+          ? "PDF"
+          : "FILE";
+  return (
+    <span className="media-thumb media-thumb-badge" aria-hidden="true">
+      {badge}
+    </span>
+  );
+}
+
 /**
  * Attaching files used to mean uploading in a separate Media section,
- * copying the asset UUID out of a table, and pasting it into the product
- * form. This picks and uploads files in place instead, so staff never see
- * an identifier.
+ * copying the asset UUID out of a table, and pasting it into a form. This
+ * picks and uploads files in place instead, so staff never see an
+ * identifier.
  */
 export default function MediaPicker({
   supabase,
@@ -68,7 +99,7 @@ export default function MediaPicker({
   const load = () =>
     void supabase
       .from("media_assets")
-      .select("id,title,kind,bucket,size_bytes")
+      .select("id,title,kind,bucket,path,size_bytes")
       .eq("bucket", bucket)
       .order("created_at", { ascending: false })
       .then(({ data }) => setAssets((data || []) as MediaAssetSummary[]));
@@ -143,7 +174,7 @@ export default function MediaPicker({
             processing_status: "ready",
             created_by: profile.id,
           })
-          .select("id,title,kind,bucket,size_bytes")
+          .select("id,title,kind,bucket,path,size_bytes")
           .single();
         setProgress(0);
         if (insertError || !data) {
@@ -165,6 +196,7 @@ export default function MediaPicker({
         <ul className="media-selected">
           {selected.map((asset) => (
             <li key={asset.id}>
+              <AssetThumb asset={asset} />
               <span className="media-selected-name">{asset.title}</span>
               <span className="media-selected-meta">
                 {asset.kind}
@@ -240,6 +272,7 @@ export default function MediaPicker({
               {selectable.slice(0, 25).map((asset) => (
                 <li key={asset.id}>
                   <button type="button" onClick={() => select(asset.id)}>
+                    <AssetThumb asset={asset} />
                     <span className="media-selected-name">{asset.title}</span>
                     <span className="media-selected-meta">
                       {asset.kind}
@@ -260,19 +293,21 @@ export default function MediaPicker({
       <style>{`
         .media-picker{display:grid;gap:10px}
         .media-selected{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-        .media-selected li{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg-elev)}
+        .media-selected li{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg-elev)}
+        .media-thumb{flex:none;width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid var(--line)}
+        .media-thumb-badge{display:grid;place-items:center;background:var(--bg);color:var(--ink-soft);font-size:.6rem;letter-spacing:.04em}
         .media-selected-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .media-selected-meta{color:var(--ink-soft);font-size:.78rem}
+        .media-selected-meta{flex:none;color:var(--ink-soft);font-size:.78rem;white-space:nowrap}
         .media-empty{color:var(--ink-soft);font-size:.85rem;margin:0}
         .media-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
         .media-upload-btn{flex:1;min-width:180px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;color:var(--ink-soft);font-size:.85rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .media-upload-btn input{display:none}
         .media-alt{min-height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
         .media-error{color:var(--red);font-size:.85rem;margin:0}
-        .media-library{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;max-height:280px;overflow:auto}
+        .media-library{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;max-height:320px;overflow:auto}
         .media-library input{min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
         .media-library ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-        .media-library li button{display:flex;width:100%;align-items:center;gap:10px;padding:7px 9px;border:0;border-radius:6px;background:transparent;color:var(--ink);text-align:left;cursor:pointer}
+        .media-library li button{display:flex;width:100%;align-items:center;gap:10px;padding:6px 8px;border:0;border-radius:6px;background:transparent;color:var(--ink);text-align:left;cursor:pointer}
         .media-library li button:hover{background:var(--bg-elev)}
       `}</style>
     </div>

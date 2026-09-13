@@ -21,6 +21,7 @@ import type { Order, OrderItem, Profile, UserRole } from "@/types/domain";
 import { canPublish, isStaff, publishStatuses } from "@/types/domain";
 import { PortalError, PortalLoading, usePortalProfile } from "./PortalState";
 import ProductsAdmin from "./ProductsAdmin";
+import MediaPicker from "./MediaPicker";
 
 type Client = SupabaseClient<any>;
 type Section = {
@@ -426,7 +427,13 @@ function ContentAdmin({
       <section className="panel">
         <h2>{editing ? "Edit record" : "New record"}</h2>
         <form className="admin-record-form" onSubmit={save}>
-          <ContentFields kind={kind} draft={draft} setDraft={setDraft} />
+          <ContentFields
+            kind={kind}
+            draft={draft}
+            setDraft={setDraft}
+            profile={profile}
+            supabase={supabase}
+          />
           <label className="field">
             Status
             <select
@@ -557,11 +564,39 @@ function ContentFields({
   kind,
   draft,
   setDraft,
+  profile,
+  supabase,
 }: {
   kind: ContentKind;
   draft: any;
   setDraft: (value: any) => void;
+  profile: Profile;
+  supabase: Client;
 }) {
+  // Media is picked or uploaded in place rather than pasted in as an
+  // identifier. A div rather than a label, since the picker contains its
+  // own buttons and a wrapping label would steal their clicks.
+  const mediaField = (
+    name: string,
+    label: string,
+    bucket: "public-media" | "private-downloads",
+    defaultKind: string,
+    emptyLabel: string,
+  ) => (
+    <div className="field wide">
+      {label}
+      <MediaPicker
+        supabase={supabase}
+        profile={profile}
+        bucket={bucket}
+        defaultKind={defaultKind}
+        multiple={false}
+        value={draft[name] ? [draft[name]] : []}
+        onChange={(ids) => setDraft({ ...draft, [name]: ids[0] || "" })}
+        emptyLabel={emptyLabel}
+      />
+    </div>
+  );
   const field = (name: string, label: string, type = "text", wide = false) => (
     <label className={`field ${wide ? "wide" : ""}`}>
       {label}
@@ -598,10 +633,34 @@ function ContentFields({
         {field("song_key", "Song key")}
         {field("price_mp3_cents", "MP3 price (cents)", "number")}
         {field("price_chords_cents", "Chord price (cents)", "number")}
-        {field("audio_asset_id", "Private MP3 media ID")}
-        {field("preview_asset_id", "Public preview media ID")}
-        {field("chord_pdf_asset_id", "Private chord PDF media ID")}
-        {field("lyrics_pdf_asset_id", "Private lyrics PDF media ID")}
+        {mediaField(
+          "audio_asset_id",
+          "Full MP3 (buyers only)",
+          "private-downloads",
+          "audio",
+          "No audio attached.",
+        )}
+        {mediaField(
+          "preview_asset_id",
+          "Public preview clip",
+          "public-media",
+          "audio_preview",
+          "No preview attached.",
+        )}
+        {mediaField(
+          "chord_pdf_asset_id",
+          "Chord chart PDF (buyers only)",
+          "private-downloads",
+          "pdf",
+          "No chord chart attached.",
+        )}
+        {mediaField(
+          "lyrics_pdf_asset_id",
+          "Lyric sheet PDF (buyers only)",
+          "private-downloads",
+          "pdf",
+          "No lyric sheet attached.",
+        )}
         {field("lyrics", "Lyrics", "textarea", true)}
       </>
     );
@@ -614,8 +673,20 @@ function ContentFields({
         {field("year", "Year", "number")}
         {field("scripture", "Scripture")}
         {field("theme", "Theme")}
-        {field("cover_asset_id", "Public cover media ID")}
-        {field("preview_asset_id", "Public preview media ID")}
+        {mediaField(
+          "cover_asset_id",
+          "Cover artwork",
+          "public-media",
+          "cover",
+          "No cover artwork yet.",
+        )}
+        {mediaField(
+          "preview_asset_id",
+          "Public preview clip",
+          "public-media",
+          "audio_preview",
+          "No preview attached.",
+        )}
         <label className="field checkbox-field">
           <input
             type="checkbox"
@@ -636,8 +707,20 @@ function ContentFields({
       {field("book", "Book")}
       {field("passage", "Passage")}
       {field("year", "Year", "number")}
-      {field("poster_asset_id", "Public poster media ID")}
-      {field("hero_video_asset_id", "Public video media ID")}
+      {mediaField(
+        "poster_asset_id",
+        "Poster image",
+        "public-media",
+        "thumbnail",
+        "No poster attached.",
+      )}
+      {mediaField(
+        "hero_video_asset_id",
+        "Episode video",
+        "public-media",
+        "video",
+        "No video attached.",
+      )}
       {field("related_album_id", "Related album ID")}
       <label className="field checkbox-field">
         <input
