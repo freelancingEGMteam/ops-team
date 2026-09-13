@@ -1,10 +1,12 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ProductPurchase from "@/components/commerce/ProductPurchase";
+import ProductCard from "@/components/catalog/ProductCard.astro";
 import {
   formatPriceRange,
   getMergedProductSlug,
   getProduct,
+  getRelatedProducts,
   variantKindLabel,
 } from "@/lib/catalog";
 import { parseRichText, toPlainText, truncateText } from "@/lib/rich-text";
@@ -15,6 +17,7 @@ if (!product) {
   if (mergedSlug) return Astro.redirect(`/resources/${mergedSlug}`, 301);
   return Astro.redirect("/404");
 }
+const related = await getRelatedProducts(product);
 
 const activeVariants = product.variants.filter((variant) => variant.is_active);
 const eyebrow =
@@ -137,6 +140,27 @@ const productStructuredData: Record<string, unknown> = {
       </aside>
     </div>
   </section>
+
+  {
+    related.length > 0 && (
+      <section class="section-shell section-contrast">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">More to explore</span>
+              <h2>Related resources</h2>
+            </div>
+            <a href="/resources">All resources →</a>
+          </div>
+          <div class="catalog-grid">
+            {related.map((item) => (
+              <ProductCard product={item} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
 </BaseLayout>
 <style>
   .breadcrumb {

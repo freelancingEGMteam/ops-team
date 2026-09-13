@@ -438,6 +438,18 @@ p { margin: 0; }
   to { transform: translateX(-50%); }
 }
 
+/* The footer paints every child white !important, which assumes a dark
+   background. In light mode .site-footer resolves to cream, leaving white
+   text on near-white. Give the footer its own dark ground there, the same
+   way the header is handled above, rather than restating every colour. */
+:root[data-theme="light"] footer.site-footer {
+  background: #0b1a2e !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+:root[data-theme="light"] footer.site-footer .footer-note {
+  border-top-color: rgba(255, 255, 255, 0.14) !important;
+}
+
 footer,
 footer * {
   color: #ffffff !important;

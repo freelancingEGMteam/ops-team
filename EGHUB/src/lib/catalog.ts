@@ -207,6 +207,36 @@ export async function getProduct(slug: string): Promise<CatalogProduct | null> {
 }
 
 /**
+ * Ranked by how many catalog collections a product shares with this one, so
+ * a Psalms chord sheet surfaces other Psalms and other chord sheets first,
+ * then falls back to recent releases rather than showing nothing.
+ */
+export async function getRelatedProducts(
+  product: CatalogProduct,
+  limit = 4,
+): Promise<CatalogProduct[]> {
+  const supabase = createPublicServerClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("products")
+    .select(
+      "*,cover:media_assets!products_cover_asset_id_fkey(bucket,path,alt_text),variants:product_variants(*,items:product_items(id))",
+    )
+    .eq("status", "published")
+    .neq("id", product.id)
+    .order("published_at", { ascending: false })
+    .limit(40);
+  const shared = (other: CatalogProduct) =>
+    other.collections.filter((collection) =>
+      product.collections.includes(collection),
+    ).length;
+  return (data ?? [])
+    .map(productRow)
+    .sort((a, b) => shared(b) - shared(a))
+    .slice(0, limit);
+}
+
+/**
  * Look-alike products get consolidated into one parent with variants. The
  * absorbed products are archived and left pointing at their replacement so
  * their existing URLs redirect instead of 404ing.
