@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ProductCard from "@/components/catalog/ProductCard.astro";
-import { getAlbum, getCatalog } from "@/lib/catalog";
+import { getAlbum, getCatalog, productMatchesAlbum } from "@/lib/catalog";
 import { parseRichText, toPlainText, truncateText } from "@/lib/rich-text";
 const { slug } = Astro.params;
 const result = slug ? await getAlbum(slug) : null;
@@ -17,8 +17,8 @@ const plainDescription = toPlainText(album.description);
 // products actually built from this album instead, and only offer the
 // button when there is something to buy.
 const { products } = await getCatalog();
-const albumProducts = products.filter(
-  (product) => product.album_id === album.id,
+const albumProducts = products.filter((product) =>
+  productMatchesAlbum(product, album),
 );
 ---
 

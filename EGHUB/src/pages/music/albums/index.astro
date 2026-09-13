@@ -40,22 +40,29 @@ const distinctProducts = filteredProducts.filter(
     (!product.album_id || !albumIds.has(product.album_id)) &&
     !albumTitles.has(product.title.trim().toLowerCase()),
 );
-const releaseEntries: ReleaseEntry[] = [
-  ...(activeCollection === "all"
-    ? albums.map((album) => ({
-        type: "album" as const,
-        item: album,
-        timestamp:
-          new Date(album.published_at || album.created_at).getTime() || 0,
-      }))
-    : []),
-  ...distinctProducts.map((product) => ({
+const byNewest = (left: ReleaseEntry, right: ReleaseEntry) =>
+  right.timestamp - left.timestamp;
+
+// Albums are the headline records, but they predate most of the imported
+// products, so sorting everything together by date buried all seven of them
+// on page two of the "All releases" page. Lead with albums, then the
+// products by recency.
+const albumEntries: ReleaseEntry[] = (activeCollection === "all" ? albums : [])
+  .map((album) => ({
+    type: "album" as const,
+    item: album,
+    timestamp: new Date(album.published_at || album.created_at).getTime() || 0,
+  }))
+  .sort(byNewest);
+const productEntries: ReleaseEntry[] = distinctProducts
+  .map((product) => ({
     type: "product" as const,
     item: product,
     timestamp:
       new Date(product.published_at || product.created_at).getTime() || 0,
-  })),
-].sort((left, right) => right.timestamp - left.timestamp);
+  }))
+  .sort(byNewest);
+const releaseEntries: ReleaseEntry[] = [...albumEntries, ...productEntries];
 
 const totalPages = Math.max(1, Math.ceil(releaseEntries.length / pageSize));
 const currentPage = Math.min(

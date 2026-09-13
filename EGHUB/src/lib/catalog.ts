@@ -207,6 +207,21 @@ export async function getProduct(slug: string): Promise<CatalogProduct | null> {
 }
 
 /**
+ * products.album_id is effectively unpopulated on the imported catalog, so
+ * matching on it alone finds nothing. Fall back to the title match the
+ * release listing already relies on to spot the same record twice.
+ */
+export function productMatchesAlbum(
+  product: Pick<CatalogProduct, "album_id" | "title">,
+  album: { id: string; title: string },
+) {
+  if (product.album_id) return product.album_id === album.id;
+  return (
+    product.title.trim().toLowerCase() === album.title.trim().toLowerCase()
+  );
+}
+
+/**
  * Ranked by how many catalog collections a product shares with this one, so
  * a Psalms chord sheet surfaces other Psalms and other chord sheets first,
  * then falls back to recent releases rather than showing nothing.
