@@ -96,7 +96,9 @@ export default function ProductPurchase({
           ))}
         </fieldset>
       )}
-      {selected && (
+      {/* The buy box header already shows the price when there is nothing
+          to choose between, so only restate it once an option is picked. */}
+      {selected && purchasable.length > 1 && (
         <strong className="buy-box-price">
           {formatMoney(selected.price_cents)}
         </strong>
