@@ -1,5 +1,9 @@
 ---
-import { formatPriceRange, type CatalogProduct } from "@/lib/catalog";
+import {
+  formatPriceRange,
+  landscapeArtworkUrl,
+  type CatalogProduct,
+} from "@/lib/catalog";
 import { toPlainText, truncateText } from "@/lib/rich-text";
 interface Props {
   product: CatalogProduct;
@@ -13,32 +17,30 @@ const blurb = truncateText(
     "A digital resource from Eternal Grace Hub.",
   150,
 );
+const artworkUrl = landscapeArtworkUrl(product.cover_url);
 ---
 
 <article class="catalog-card item-shadow">
   <a href={`/resources/${product.slug}`}>
     <div class="catalog-art product-art">
       {
-        product.cover_url ? (
-          <>
-            <img
-              class="catalog-art-backdrop"
-              src={product.cover_url}
-              alt=""
-              aria-hidden="true"
-              loading="lazy"
-            />
-            <img
-              class="catalog-art-image"
-              src={product.cover_url}
-              alt={product.cover_alt || `${product.title} artwork`}
-              loading="lazy"
-            />
-          </>
+        artworkUrl ? (
+          <img
+            class="catalog-art-image"
+            src={artworkUrl}
+            alt={product.cover_alt || `${product.title} artwork`}
+            loading="lazy"
+            onerror="this.hidden = true; const fallback = this.closest('.catalog-art')?.querySelector('.catalog-art-fallback'); if (fallback) fallback.hidden = false"
+          />
         ) : (
-          <span>↓</span>
+          <span aria-hidden="true">↓</span>
         )
       }
+      {artworkUrl && (
+        <span class="catalog-art-fallback" hidden>
+          {product.title}
+        </span>
+      )}
     </div>
     <div class="catalog-card-copy">
       <span class="eyebrow">{eyebrow}</span>

@@ -10,4 +10,5 @@ test-results/
 playwright-report/
 coverage/
 .lighthouseci/
+public/artwork/sources/
 *.tsbuildinfo

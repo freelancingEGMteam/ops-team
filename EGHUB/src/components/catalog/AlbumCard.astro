@@ -1,35 +1,33 @@
 ---
-import type { CatalogAlbum } from "@/lib/catalog";
+import { landscapeArtworkUrl, type CatalogAlbum } from "@/lib/catalog";
 interface Props {
   album: CatalogAlbum;
 }
 const { album } = Astro.props;
+const artworkUrl = landscapeArtworkUrl(album.cover_url);
 ---
 
 <article class="catalog-card item-shadow">
   <a href={`/music/albums/${album.slug}`}>
     <div class="catalog-art album-art">
       {
-        album.cover_url ? (
-          <>
-            <img
-              class="catalog-art-backdrop"
-              src={album.cover_url}
-              alt=""
-              aria-hidden="true"
-              loading="lazy"
-            />
-            <img
-              class="catalog-art-image"
-              src={album.cover_url}
-              alt={album.cover_alt || `${album.title} cover`}
-              loading="lazy"
-            />
-          </>
+        artworkUrl ? (
+          <img
+            class="catalog-art-image"
+            src={artworkUrl}
+            alt={album.cover_alt || `${album.title} cover`}
+            loading="lazy"
+            onerror="this.hidden = true; const fallback = this.closest('.catalog-art')?.querySelector('.catalog-art-fallback'); if (fallback) fallback.hidden = false"
+          />
         ) : (
-          <span>EGM</span>
+          <span aria-hidden="true">EGM</span>
         )
       }
+      {artworkUrl && (
+        <span class="catalog-art-fallback" hidden>
+          {album.title}
+        </span>
+      )}
     </div>
     <div class="catalog-card-copy">
       <span class="eyebrow">{album.year || "New release"}</span>

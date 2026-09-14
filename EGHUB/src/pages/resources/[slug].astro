@@ -7,6 +7,7 @@ import {
   getMergedProductSlug,
   getProduct,
   getRelatedProducts,
+  landscapeArtworkUrl,
   variantKindLabel,
 } from "@/lib/catalog";
 import { parseRichText, toPlainText, truncateText } from "@/lib/rich-text";
@@ -18,6 +19,7 @@ if (!product) {
   return Astro.redirect("/404");
 }
 const related = await getRelatedProducts(product);
+const artworkUrl = landscapeArtworkUrl(product.cover_url);
 
 const activeVariants = product.variants.filter((variant) => variant.is_active);
 const eyebrow =
@@ -57,7 +59,7 @@ const productStructuredData: Record<string, unknown> = {
   title={product.title}
   description={metaDescription}
   canonicalPath={`/resources/${product.slug}`}
-  image={product.cover_url}
+  image={artworkUrl || product.cover_url}
   structuredData={productStructuredData}
 >
   <section class="content-page">
@@ -74,24 +76,18 @@ const productStructuredData: Record<string, unknown> = {
       <div class="product-gallery">
         <div class="product-detail-art">
           {
-            product.cover_url ? (
-              <>
-                <img
-                  class="catalog-art-backdrop"
-                  src={product.cover_url}
-                  alt=""
-                  aria-hidden="true"
-                />
-                <img
-                  class="catalog-art-image"
-                  src={product.cover_url}
-                  alt={product.cover_alt || `${product.title} artwork`}
-                />
-              </>
+            artworkUrl ? (
+              <img
+                class="catalog-art-image"
+                src={artworkUrl}
+                alt={product.cover_alt || `${product.title} artwork`}
+                onerror="this.hidden = true; const fallback = this.closest('.product-detail-art')?.querySelector('.catalog-art-fallback'); if (fallback) fallback.hidden = false"
+              />
             ) : (
               <span aria-hidden="true">↓</span>
             )
           }
+          {artworkUrl && <span class="catalog-art-fallback" hidden>{product.title}</span>}
         </div>
       </div>
 
@@ -209,7 +205,6 @@ const productStructuredData: Record<string, unknown> = {
     display: grid;
     place-items: center;
     overflow: hidden;
-    isolation: isolate;
     border: 1px solid var(--line);
     border-radius: 10px;
     background:
@@ -229,23 +224,8 @@ const productStructuredData: Record<string, unknown> = {
     min-height: 0;
     display: block;
   }
-  .product-detail-art .catalog-art-backdrop {
-    position: absolute;
-    inset: -8%;
-    width: 116%;
-    height: 116%;
-    object-fit: cover;
-    filter: blur(24px) saturate(0.85) brightness(0.62);
-    opacity: 0.78;
-    transform: scale(1.08);
-    z-index: -1;
-  }
   .product-detail-art .catalog-art-image {
-    position: relative;
-    z-index: 0;
-    object-fit: contain;
-    padding: 12px 28px;
-    filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.3));
+    object-fit: cover;
   }
 
   .product-info h1 {

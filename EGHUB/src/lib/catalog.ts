@@ -40,6 +40,21 @@ export type CatalogProduct = Product & {
   collection_labels: string[];
 };
 
+/**
+ * Return the local, precomposed 16:9 artwork for a public media URL.
+ *
+ * The catalog keeps the original Supabase URL as its source of truth, while
+ * the storefront uses generated landscape derivatives so portrait covers are
+ * never cropped in cards or detail pages.
+ */
+export function landscapeArtworkUrl(sourceUrl: string | null) {
+  if (!sourceUrl) return null;
+  const filename = sourceUrl.split("/").pop()?.split("?")[0];
+  if (!filename) return null;
+  const stem = filename.replace(/\.[^.]+$/, "");
+  return `/artwork/landscape/${stem}.png`;
+}
+
 export interface CatalogSnapshot {
   albums: CatalogAlbum[];
   episodes: CatalogEpisode[];

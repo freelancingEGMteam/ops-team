@@ -2,7 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import AlbumCard from "@/components/catalog/AlbumCard.astro";
 import EpisodeCard from "@/components/catalog/EpisodeCard.astro";
-import { getCatalog } from "@/lib/catalog";
+import { getCatalog, landscapeArtworkUrl } from "@/lib/catalog";
 
 const catalog = await getCatalog();
 
@@ -68,7 +68,11 @@ const albumCount = catalog.albums.length;
         heroCovers.length > 0 && (
           <div class="home-hero-art" aria-hidden="true">
             {heroCovers.map((album) => (
-              <img src={album.cover_url} alt="" loading="eager" />
+              <img
+                src={landscapeArtworkUrl(album.cover_url) || album.cover_url || ""}
+                alt=""
+                loading="eager"
+              />
             ))}
           </div>
         )
