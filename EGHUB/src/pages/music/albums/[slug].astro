@@ -135,9 +135,10 @@ const albumProducts = products.filter((product) =>
     align-items: center;
   }
   .album-detail-art {
-    aspect-ratio: 1;
+    aspect-ratio: 16 / 9;
     display: grid;
     place-items: center;
+    overflow: hidden;
     border: 1px solid var(--line);
     background: repeating-radial-gradient(
       circle,
@@ -154,6 +155,9 @@ const albumProducts = products.filter((product) =>
   .album-detail-art img {
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: block;
     object-fit: cover;
   }
   .album-copy {

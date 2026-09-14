@@ -250,7 +250,7 @@ body {
   object-fit: cover;
 }
 .album-art {
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 9;
   background:
     radial-gradient(circle, rgba(201, 166, 97, 0.22) 0 20%, transparent 21%),
     repeating-radial-gradient(circle, #142a40 0 5px, #0a1525 6px 10px);
