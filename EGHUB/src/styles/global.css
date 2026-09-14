@@ -266,6 +266,9 @@ body {
   text-align: center;
   background: linear-gradient(145deg, #17314b, #07111f);
 }
+.catalog-art-fallback[hidden] {
+  display: none;
+}
 .album-art {
   aspect-ratio: 16 / 9;
   background:
