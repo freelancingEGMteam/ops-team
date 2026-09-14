@@ -75,10 +75,19 @@ const productStructuredData: Record<string, unknown> = {
         <div class="product-detail-art">
           {
             product.cover_url ? (
-              <img
-                src={product.cover_url}
-                alt={product.cover_alt || `${product.title} artwork`}
-              />
+              <>
+                <img
+                  class="catalog-art-backdrop"
+                  src={product.cover_url}
+                  alt=""
+                  aria-hidden="true"
+                />
+                <img
+                  class="catalog-art-image"
+                  src={product.cover_url}
+                  alt={product.cover_alt || `${product.title} artwork`}
+                />
+              </>
             ) : (
               <span aria-hidden="true">↓</span>
             )
@@ -196,9 +205,11 @@ const productStructuredData: Record<string, unknown> = {
   }
   .product-detail-art {
     aspect-ratio: 16 / 9;
+    position: relative;
     display: grid;
     place-items: center;
     overflow: hidden;
+    isolation: isolate;
     border: 1px solid var(--line);
     border-radius: 10px;
     background:
@@ -217,7 +228,24 @@ const productStructuredData: Record<string, unknown> = {
     min-width: 0;
     min-height: 0;
     display: block;
+  }
+  .product-detail-art .catalog-art-backdrop {
+    position: absolute;
+    inset: -8%;
+    width: 116%;
+    height: 116%;
     object-fit: cover;
+    filter: blur(24px) saturate(0.85) brightness(0.62);
+    opacity: 0.78;
+    transform: scale(1.08);
+    z-index: -1;
+  }
+  .product-detail-art .catalog-art-image {
+    position: relative;
+    z-index: 0;
+    object-fit: contain;
+    padding: 12px 28px;
+    filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.3));
   }
 
   .product-info h1 {

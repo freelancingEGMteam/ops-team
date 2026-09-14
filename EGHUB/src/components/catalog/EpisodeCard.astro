@@ -11,11 +11,21 @@ const { episode } = Astro.props;
     <div class="catalog-art video-art">
       {
         episode.poster_url ? (
-          <img
-            src={episode.poster_url}
-            alt={episode.poster_alt || `${episode.title} poster`}
-            loading="lazy"
-          />
+          <>
+            <img
+              class="catalog-art-backdrop"
+              src={episode.poster_url}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+            />
+            <img
+              class="catalog-art-image"
+              src={episode.poster_url}
+              alt={episode.poster_alt || `${episode.title} poster`}
+              loading="lazy"
+            />
+          </>
         ) : (
           <span>▶</span>
         )

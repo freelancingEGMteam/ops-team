@@ -11,11 +11,21 @@ const { album } = Astro.props;
     <div class="catalog-art album-art">
       {
         album.cover_url ? (
-          <img
-            src={album.cover_url}
-            alt={album.cover_alt || `${album.title} cover`}
-            loading="lazy"
-          />
+          <>
+            <img
+              class="catalog-art-backdrop"
+              src={album.cover_url}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+            />
+            <img
+              class="catalog-art-image"
+              src={album.cover_url}
+              alt={album.cover_alt || `${album.title} cover`}
+              loading="lazy"
+            />
+          </>
         ) : (
           <span>EGM</span>
         )
